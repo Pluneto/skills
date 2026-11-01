@@ -138,3 +138,30 @@ setup                setup-pluneto-skills             ~0 tok
 ```
 
 Before ~2334 tokens (41 skills across pluneto-skills and mattpocock-skills) → after **~2132 tokens** (29 skills), −202 tokens (−9%). Claude Code's own estimate (`claude plugin details`, which also counts user-invoked skill names) is ~2,503 tokens for the four content plugins, against ~1,651 for mattpocock-skills alone before.
+
+## Design plugin restructure: before (2026-11-01)
+
+`scripts/measure-skills plugins/design` on `origin/main` (c7615fe), design 1.0.1:
+
+```
+design               backend-design-review            ~196 tok
+design               dashboard-design                 ~155 tok
+design               tool-for-users                   ~130 tok
+design               user-types                       ~110 tok
+
+4 skills, ~591 tokens always-on
+```
+
+## Design plugin restructure: after (2026-11-01)
+
+Same script on the `design-2` branch, design 2.0.0:
+
+```
+design               design-review                    ~118 tok
+design               product-context                  ~68 tok
+design               ui-craft                         ~120 tok
+
+3 skills, ~306 tokens always-on
+```
+
+Before ~591 → after **~306 tokens** (−285, −48%), within the 650-token budget.

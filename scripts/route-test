@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""Routing test for the design plugin.
+
+Runs workflow:use-available-skills directly (planning phase, plus one build-phase
+record-only milestone) on six goals,
+several times each, with `claude -p --plugin-dir plugins` in scratch clones of
+real repos, and reports which design skills each run picked and how many
+AskUserQuestion calls came after a design Skill call.
+
+Usage: scripts/route-test [--runs 3] [--jobs 5] [--model M] [--only TEXT] [--keep] [--from DIR]
+Repos come from ZEPHYR_REPO, BRAIN_REPO and CORTANA_REPO
+(default ~/projects/<name>). Clones are taken from each repo's HEAD, so
+uncommitted files are never copied. Prints a Markdown table.
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+HOME = Path.home() / "projects"
+REPOS = {
+    "zephyr": Path(os.environ.get("ZEPHYR_REPO", HOME / "zephyr-homelab")),
+    "brain": Path(os.environ.get("BRAIN_REPO", HOME / "brain-of-omniscience")),
+    "cortana": Path(os.environ.get("CORTANA_REPO", HOME / "cortana")),
+}
+# Old (design 1.x) and new (2.x) names, so the same table works before and after.
+DESIGN = {"design-review", "ui-craft", "product-context",
+          "backend-design-review", "dashboard-design", "user-types", "tool-for-users"}
+GOALS = [
+    # (id, repo, goal, any of these must be picked, none of these may be picked)
+    ("1 ticket endpoint", "zephyr",
+     "Add an endpoint for buying event tickets: members pay with Stripe, and each event has a limited number of places.",
+     {"design-review", "backend-design-review"}, set()),
+    ("2 signups admin page", "zephyr",
+     "Add an admin page where the board can see, filter and manage the signups for each event.",
+     {"ui-craft", "dashboard-design"}, set()),
+    ("3 captains tool", "zephyr",
+     "Build a tool for team captains and their team members: captains manage rosters and match lineups, members say when they can play.",
+     {"product-context", "user-types", "tool-for-users"}, set()),
+    ("4 brain backend", "brain",
+     "Change the capture backend in .automation so Telegram captures are queued in SQLite and retried when processing fails, instead of being written straight to Inbox/.",
+     {"design-review", "backend-design-review"}, {"ui-craft", "dashboard-design"}),
+    ("2b signups page, build", "zephyr",
+     "BUILD:Milestone 'Admin signups page': build the page where the board sees, filters and manages the signups for each event.",
+     {"ui-craft", "dashboard-design"}, set()),
+    ("5 log rotation", "cortana",
+     "Set up log rotation on the Proxmox host so /var/log stops filling the root disk.",
+     set(), DESIGN),
+]
+BUILD_PROMPT = ("Run the workflow:use-available-skills skill now in record-only mode, for the build phase of this "
+                "milestone:\n\n{goal}\n\nDon't build anything. Finish with its Record step.")
+PROMPT = ("Run the workflow:use-available-skills skill now, for the planning phase of this goal:\n\n{goal}\n\n"
+          "We are only choosing skills for planning: don't write a plan or build anything. "
+          "Finish with its Record step.")
+READ_ONLY = "Read Glob Grep Skill Bash(ls:*) Bash(head:*) Bash(cat:*) Bash(find:*) Bash(git log:*) Bash(git status:*)"
+BLOCK = re.compile(r"^### pluneto-skills\n.*?(?=^#{1,3} |\Z)", re.S | re.M)
+
+
+def scratch_clone(repo, dest):
+    """Clone HEAD, drop project plugin settings and the CLAUDE.md skills block (they name skills)."""
+    subprocess.run(["git", "clone", "-q", "--depth", "1", f"file://{repo}", str(dest)], check=True)
+    (dest / ".claude" / "settings.json").unlink(missing_ok=True)
+    for name in ("CLAUDE.md", "AGENTS.md"):
+        doc = dest / name
+        if doc.is_file():
+            doc.write_text(BLOCK.sub("", doc.read_text(encoding="utf-8")), encoding="utf-8")
+
+
+def short(skill):
+    return skill.split(":")[-1]
+
+
+def parse(stream):
+    """Return (design skills picked, AskUserQuestion calls after a design Skill call, cost)."""
+    picked, asks, seen_design, cost, result = [], 0, False, 0.0, ""
+    for line in stream.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if event.get("type") == "result":
+            cost, result = event.get("total_cost_usd") or 0.0, event.get("result") or ""
+        if event.get("type") != "assistant":
+            continue
+        for block in event.get("message", {}).get("content", []):
+            if block.get("type") != "tool_use":
+                continue
+            if block.get("name") == "Skill":
+                name = short(str(block.get("input", {}).get("skill", "")))
+                if name in DESIGN:
+                    seen_design = True
+                    picked.append(name)
+            elif block.get("name") == "AskUserQuestion" and seen_design:
+                asks += 1
+    # Skills chosen on description only are recorded without a Skill call: read the
+    # "Skills used" (or record-only "Skills matched") block up to the near-misses, taking the name that starts each entry.
+    start = max(result.lower().find("skills used"), result.lower().find("skills matched"))
+    end = result.lower().find("considered", start)
+    for line in (result[start:end if end > 0 else None] if start >= 0 else "").splitlines():
+        line = re.sub(r"^[\s*>#-]*(skills used:?)?[\s*:]*", "", line, flags=re.I)
+        entry = re.match(r"`?(?:[\w-]+:)?([\w-]+)", line)
+        if entry and entry.group(1) in DESIGN:
+            picked.append(entry.group(1))
+    return sorted(set(picked)), asks, cost
+
+
+def run_one(args, goal, run, workdir):
+    gid, repo, text, _, _ = goal
+    dest = workdir / f"{gid.split()[0]}-{run}"
+    scratch_clone(REPOS[repo], dest)
+    cmd = ["claude", "-p", "--plugin-dir", str(ROOT / "plugins"), "--add-dir", str(ROOT / "plugins"),
+           "--output-format", "stream-json", "--verbose", "--allowedTools", READ_ONLY,
+           "--max-budget-usd", str(args.budget)]
+    if args.model:
+        cmd += ["--model", args.model]
+    prompt = BUILD_PROMPT.format(goal=text[6:]) if text.startswith("BUILD:") else PROMPT.format(goal=text)
+    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=dest)
+    (workdir / f"{gid.split()[0]}-{run}.jsonl").write_text(proc.stdout)
+    shutil.rmtree(dest, ignore_errors=True)
+    return gid, run, *parse(proc.stdout)
+
+
+def reparse(workdir, goal, run):
+    return goal[0], run, *parse((workdir / f"{goal[0].split()[0]}-{run}.jsonl").read_text())
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--runs", type=int, default=3)
+    ap.add_argument("--jobs", type=int, default=5)
+    ap.add_argument("--model")
+    ap.add_argument("--budget", type=float, default=2.0, help="max USD per run")
+    ap.add_argument("--only", help="run only goals whose id contains this text")
+    ap.add_argument("--keep", action="store_true", help="keep the transcripts")
+    ap.add_argument("--from", dest="saved", help="re-score transcripts kept by an earlier --keep run")
+    args = ap.parse_args()
+    missing = [str(p) for p in REPOS.values() if not (p / ".git").exists()]
+    if missing:
+        sys.exit("route-test: repo not found: " + ", ".join(missing))
+    goals = [g for g in GOALS if not args.only or args.only in g[0]]
+    jobs = [(g, r) for g in goals for r in range(1, args.runs + 1)]
+    if args.saved:
+        workdir, args.keep = Path(args.saved), True
+        results = [reparse(workdir, g, r) for g, r in jobs]
+    else:
+        workdir = Path(tempfile.mkdtemp(prefix="route-test-"))
+        with ThreadPoolExecutor(args.jobs) as pool:
+            results = list(pool.map(lambda j: run_one(args, j[0], j[1], workdir), jobs))
+
+    print("| Goal | Expected | Picks per run | Right | Asks after design skill |")
+    print("|---|---|---|---|---|")
+    total_cost = 0.0
+    for gid, _, _, want, forbid in goals:
+        rows = [r for r in results if r[0] == gid]
+        right = sum(1 for _, _, picked, _, _ in rows
+                    if (not want or set(picked) & want) and not set(picked) & forbid)
+        picks = " / ".join(", ".join(p) or "none" for _, _, p, _, _ in rows)
+        expected = (" or ".join(sorted(want)) or "none") + (f"; not {', '.join(sorted(forbid))}" if want and forbid else "")
+        print(f"| {gid} | {expected} | {picks} | {right}/{len(rows)} | {sum(r[3] for r in rows)} |")
+        total_cost += sum(r[4] for r in rows)
+    print(f"\nCost ~${total_cost:.2f}. Transcripts: {workdir if args.keep else 'deleted (use --keep)'}")
+    if not args.keep:
+        shutil.rmtree(workdir, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,6 +1,14 @@
-# Dashboard Checklist
+# UI checklist
 
-Run at the end of every Build or Review. Mark each item done, n/a (say why), or gap.
+Run at the end of every Build or Review. Mark each item done, n/a (say why), or gap. Sections 1–3 apply in full to Operate screens and where relevant elsewhere.
+
+## 0. Theme and mode
+- [ ] Colours, type, spacing, radius and icons come from the project's existing tokens and components; any new token is named
+- [ ] Each screen's surface mode (Operate, Persuade, Read, Experience, Converse) is named and drives its trade-offs
+- [ ] Persuade: one message and one primary call to action per screen, real product graphics and proof
+- [ ] Read: 60–75 characters a line, clear heading levels, scannable
+- [ ] Experience: the signature motion has a `prefers-reduced-motion` fallback
+- [ ] Converse: short messages, actions as buttons, every failure answered, acknowledgement within a second
 
 ## 1. Data drives the form
 - [ ] Each column/field matches its data type (chip, number, avatar, date, text)
@@ -39,6 +47,9 @@ Run at the end of every Build or Review. Mark each item done, n/a (say why), or 
 - [ ] Status never conveyed by color alone
 - [ ] Contrast OK on chips and dimmed rows
 - [ ] Tooltips and popovers dismissible with Escape and focus-managed
+- [ ] Everything operable by keyboard with a visible focus ring; semantic elements before ARIA
+- [ ] Targets at least 24×24 px; status updates announced through a live region
+- [ ] Reflows at 320 px wide and 200% zoom
 
 ## 5. Memorability (n/a for internal/ops tools unless noted)
 - [ ] Audience tier identified (consumer / B2B / internal)
@@ -50,7 +61,7 @@ Run at the end of every Build or Review. Mark each item done, n/a (say why), or 
 
 ## 6. No AI tells (SaaS / vibecoded apps)
 - [ ] No emojis as icons; one consistent icon set; all icons actually render
-- [ ] Small deliberate palette; series and scale colors are clearly distinguishable
+- [ ] Small deliberate palette; series and scale colors are clearly distinguishable (dataviz skill followed when available)
 - [ ] No repeated summary metrics across pages; no element without an insight or job
 - [ ] Visual encodings fit the data type (including uncapped or open-ended values)
 - [ ] Simplifying kept function: search, sort, filter work on every list; utility pages are complete
