@@ -10,6 +10,7 @@ then the repo's own checks:
 - every skill is named in the which-skill router (as a whole word)
 - the generated marketplace files are current (scripts/build-marketplace --check)
 - files kept as identical copies in several skills (PAIRED) still match
+- no design skill tells the agent to question the user itself (NO_ASKING)
 """
 import json
 import re
@@ -35,6 +36,10 @@ PAIRED = [
     ["plugins/workflow/skills/to-tickets/no-tracker-doc.md", "plugins/workflow/skills/wayfinder/no-tracker-doc.md",
      "plugins/workflow/skills/build-this/no-tracker-doc.md"],
 ]
+# Design skills return Open questions instead of asking (docs/design-contract.md).
+NO_ASKING = re.compile(r"AskUserQuestion|question tool|ask the user|ask which|ask only", re.I)
+# 1.x skills awaiting replacement: their hits print as notes until each is deleted (remove this when empty).
+NO_ASKING_LEGACY = {"backend-design-review", "dashboard-design", "tool-for-users", "user-types"}
 
 
 def problems(report):
@@ -120,6 +125,16 @@ def repo_problems():
         texts = {rel: (ROOT / rel).read_bytes() if (ROOT / rel).is_file() else None for rel in group}
         if None in texts.values() or len(set(texts.values())) > 1:
             found.append("these copies must be identical (edit all of them): " + ", ".join(group))
+    for path in sorted((ROOT / "plugins" / "design").rglob("*")):
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            for hit in NO_ASKING.findall(line):
+                if path.relative_to(ROOT / "plugins" / "design" / "skills").parts[0] in NO_ASKING_LEGACY:
+                    print(f"validate: note: legacy {path.relative_to(ROOT)}:{number}: \"{hit}\"", file=sys.stderr)
+                    continue
+                found.append(f"{path.relative_to(ROOT)}:{number}: \"{hit}\": design skills return Open questions "
+                             "instead of asking (docs/design-contract.md)")
     return found
 
 
