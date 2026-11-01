@@ -30,13 +30,14 @@ VENDORED = {"tdd", "diagnosing-bugs", "review-changes", "pr", "prototype", "code
 ROUTER = ROOT / "plugins" / "workflow" / "skills" / "which-skill" / "SKILL.md"
 # Files copied into several skills (no symlinks allowed): each group must stay identical.
 PAIRED = [
+    ["plugins/design/skills/product-context/contract.md", "plugins/design/skills/design-review/contract.md"],
     ["plugins/workflow/skills/to-tickets/no-tracker-doc.md", "plugins/workflow/skills/wayfinder/no-tracker-doc.md",
      "plugins/workflow/skills/build-this/no-tracker-doc.md"],
 ]
 # Design skills return Open questions instead of asking (docs/design-contract.md).
 NO_ASKING = re.compile(r"AskUserQuestion|question tool|ask the user|ask which|ask only", re.I)
 # 1.x skills awaiting replacement: their hits print as notes until each is deleted (remove this when empty).
-NO_ASKING_LEGACY = {"backend-design-review", "dashboard-design"}
+NO_ASKING_LEGACY = {"dashboard-design"}
 
 
 def problems(report):
