@@ -9,7 +9,7 @@
     {
       "name": "design",
       "source": "./plugins/design",
-      "description": "Design and UX reviews: backend-design-review, dashboard-design, user-types and tool-for-users."
+      "description": "Design skills that fit the workflow plugin: product-context (who it is for), design-review (shape and critique) and ui-craft (build the UI)."
     },
     {
       "name": "engineering",

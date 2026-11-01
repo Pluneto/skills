@@ -40,8 +40,7 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 
 - **backend-design-review**: critique a backend while it's being planned (stack, data model, tenancy, API contracts) or review an existing one.
 - **dashboard-design**: build or critique dashboards, admin panels and data-dense UIs.
-- **user-types**: maintain `UX/User_Types.md`, the repo's user-types with MoSCoW requirements.
-- **tool-for-users**: map a requested tool's features to those user-types and find the gaps.
+- **product-context**: draft or update `PRODUCT.md`, the repo's ranked user-types with MoSCoW needs under permanent IDs; converts a legacy `UX/User_Types.md`.
 
 ## Standalone (workflow)
 

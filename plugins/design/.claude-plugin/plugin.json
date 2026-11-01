@@ -1,7 +1,7 @@
 {
   "name": "design",
-  "version": "1.0.1",
-  "description": "Design and UX reviews: backend-design-review, dashboard-design, user-types and tool-for-users.",
+  "version": "2.0.0",
+  "description": "Design skills that fit the workflow plugin: product-context (who it is for), design-review (shape and critique) and ui-craft (build the UI).",
   "author": {
     "name": "Pluneto"
   },
@@ -11,7 +11,6 @@
   "skills": [
     "./skills/backend-design-review",
     "./skills/dashboard-design",
-    "./skills/tool-for-users",
-    "./skills/user-types"
+    "./skills/product-context"
   ]
 }
