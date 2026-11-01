@@ -30,14 +30,13 @@ VENDORED = {"tdd", "diagnosing-bugs", "review-changes", "pr", "prototype", "code
 ROUTER = ROOT / "plugins" / "workflow" / "skills" / "which-skill" / "SKILL.md"
 # Files copied into several skills (no symlinks allowed): each group must stay identical.
 PAIRED = [
-    ["plugins/design/skills/product-context/contract.md", "plugins/design/skills/design-review/contract.md"],
+    ["plugins/design/skills/product-context/contract.md", "plugins/design/skills/design-review/contract.md",
+     "plugins/design/skills/ui-craft/contract.md"],
     ["plugins/workflow/skills/to-tickets/no-tracker-doc.md", "plugins/workflow/skills/wayfinder/no-tracker-doc.md",
      "plugins/workflow/skills/build-this/no-tracker-doc.md"],
 ]
 # Design skills return Open questions instead of asking (docs/design-contract.md).
 NO_ASKING = re.compile(r"AskUserQuestion|question tool|ask the user|ask which|ask only", re.I)
-# 1.x skills awaiting replacement: their hits print as notes until each is deleted (remove this when empty).
-NO_ASKING_LEGACY = {"dashboard-design"}
 
 
 def problems(report):
@@ -128,9 +127,6 @@ def repo_problems():
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
             for hit in NO_ASKING.findall(line):
-                if path.relative_to(ROOT / "plugins" / "design" / "skills").parts[0] in NO_ASKING_LEGACY:
-                    print(f"validate: note: legacy {path.relative_to(ROOT)}:{number}: \"{hit}\"", file=sys.stderr)
-                    continue
                 found.append(f"{path.relative_to(ROOT)}:{number}: \"{hit}\": design skills return Open questions "
                              "instead of asking (docs/design-contract.md)")
     return found

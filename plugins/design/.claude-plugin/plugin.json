@@ -9,8 +9,8 @@
   "homepage": "https://github.com/Pluneto/skills",
   "repository": "https://github.com/Pluneto/skills",
   "skills": [
-    "./skills/dashboard-design",
     "./skills/design-review",
-    "./skills/product-context"
+    "./skills/product-context",
+    "./skills/ui-craft"
   ]
 }

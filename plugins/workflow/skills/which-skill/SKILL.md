@@ -39,7 +39,7 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 ## Design and UX (design)
 
 - **design-review**: critique and shape a design while it's planned, or review an existing one: backend, API contracts, UI and accessibility, UX copy, chat bots, and coverage of `PRODUCT.md` user-types.
-- **dashboard-design**: build or critique dashboards, admin panels and data-dense UIs.
+- **ui-craft**: build or critique any UI so it looks deliberate: reads the theme first, then surface modes (Operate, Persuade, Read, Experience, Converse), states, accessibility and the AI-generated tells.
 - **product-context**: draft or update `PRODUCT.md`, the repo's ranked user-types with MoSCoW needs under permanent IDs; converts a legacy `UX/User_Types.md`.
 
 ## Standalone (workflow)
