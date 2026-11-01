@@ -16,6 +16,7 @@ Skills name a **role**; apply the label in the "Label in this repo" column.
 | agent | `ready-for-agent` | `ready-for-agent` | Fully specified; an agent can build it unattended (to-tickets, build-this, dispatch) |
 | human | `ready-for-human` | `ready-for-human` | Needs the user: a console step, a decision, a physical action (to-tickets, build-this, dispatch) |
 | claim | `in-progress` | `in-progress` | A worker holds this ticket (Claim, Release, dispatch's stale-claim list) |
+| decision | `needs-decision` | `needs-decision` | A worker parked this ticket on a question only the user can answer (dispatch's worker prompts and `status`) |
 
 Every ticket from to-tickets carries exactly one of the agent and human labels.
 
@@ -66,6 +67,11 @@ Read by dispatch and by its worker prompts. A blank field uses the fallback in b
 - **Land status command**: [blank: `gh pr checks <pr>`, re-run every few minutes until no check is pending; "no checks reported" means the repo has no CI, so treat it as green]
 - **Areas map**: `docs/agents/areas.md` [missing: dispatch infers areas from the issues and `git log --name-only`]
 - **Model tiers**: [blank: each provider's default model; dispatch still suggests the effort]. One line per T3 provider, its `light / standard / strong` models by their T3 model ids, for example `Codex (pool): <light> / <standard> / <strong>`. List only models the subscription behind that provider serves; one model may fill several tiers.
+- **Verify command**: [blank: the check commands are the verification]. What a worker runs before opening its PR to prove the change, and the command that reports its result, for example a land script's dry run and its status command.
+- **Review command, Codex reviewer** (reviews Claude workers): [blank: no pre-PR review; the PR says "Review: none configured"]. `<dir>` holds `input.md` (instructions, issue, diff) and gets `review.md`; dispatch fills `<dir>`, `<model>` and `<effort>`. On T3 with the pools: `CODEX_HOME=~/.codex-pool codex exec --ephemeral --skip-git-repo-check -s read-only -C <dir> -m <model> -c 'model_reasoning_effort="<effort>"' -o <dir>/review.md - < <dir>/input.md`
+- **Review command, Claude reviewer** (reviews Codex workers): [blank: as above]. On T3 with the pools: `cd <dir> && CLAUDE_CONFIG_DIR=~/.claude-pool claude -p --model <model> --effort <effort> --tools "" --no-session-persistence < input.md > review.md`
+- **Main health command**: used only without a Land command (a land script checks main itself). [blank: prints `green`, `pending` or `red <run url>` for the newest commit on the default branch: `gh run list --branch <default branch> --event push --limit 20 --json headSha,status,conclusion,url --jq '(.[0].headSha) as $s | [.[] | select(.headSha == $s)] | if any(.status != "completed") then "pending" elif all(.conclusion == "success" or .conclusion == "skipped" or .conclusion == "neutral") then "green" else "red " + ([.[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral") | .url][0]) end'`]
+- **Model database**: [blank: Model tiers for every ticket]. A command that prints the table of task type, rank, provider, model, effort and evidence that dispatch picks workers from, for example `gh api repos/<owner>/<repo>/contents/models.md --jq .content | base64 -d`.
 
 ## When a skill says "publish to the issue tracker"
 
