@@ -33,12 +33,32 @@ Across every session transcript under `~/.claude/projects/`:
 |---|---|---|---|---|
 | 1 ticket endpoint | backend-design-review or design-review | backend-design-review / backend-design-review / backend-design-review | 3/3 | 0 |
 | 2 signups admin page | dashboard-design or ui-craft | backend-design-review, tool-for-users / backend-design-review, dashboard-design / backend-design-review, dashboard-design, tool-for-users | 2/3 | 0 |
+| 2b signups page, build | dashboard-design or ui-craft | dashboard-design / dashboard-design / dashboard-design | 3/3 | 0 |
 | 3 captains tool | product-context or tool-for-users or user-types | backend-design-review, tool-for-users / none / backend-design-review, tool-for-users | 2/3 | 0 |
 | 4 brain backend | backend-design-review or design-review; not dashboard-design, ui-craft | backend-design-review / backend-design-review / backend-design-review | 3/3 | 0 |
 | 5 log rotation | none | none / none / none | 3/3 | 0 |
 
-Cost ~$5.80 for 15 runs on Opus. Invoked directly, use-available-skills already finds backend-design-review reliably; the 2-of-37 rate in real sessions comes from plan-this rarely reaching a design skill, and from the questioning and file-writing skills being skipped in planning. Goal 2 picks backend-design-review and tool-for-users alongside or instead of dashboard-design, and goal 3 never picks user-types (it writes a file).
+Cost ~$5.80 for 15 runs on Opus. Invoked directly, use-available-skills already finds backend-design-review reliably; the 2-of-37 rate in real sessions comes from plan-this rarely reaching a design skill, and from the questioning and file-writing skills being skipped in planning. Goal 2 picks backend-design-review and tool-for-users alongside or instead of dashboard-design, and goal 3 never picks user-types (it writes a file). Row 2b (the same goal as a build milestone, use-available-skills in record-only mode) was added during the after-run and measured on 1.0.1 from a worktree of `origin/main`.
 
 ### After (design 2.0.0)
 
-AFTER_TABLE
+| Goal | Expected | Picks per run | Right | Asks after design skill |
+|---|---|---|---|---|
+| 1 ticket endpoint | backend-design-review or design-review | design-review / design-review / design-review, product-context | 3/3 | 0 |
+| 2 signups admin page | dashboard-design or ui-craft | design-review / design-review / design-review | 0/3 | 0 |
+| 2b signups page, build | dashboard-design or ui-craft | ui-craft / ui-craft / ui-craft | 3/3 | 0 |
+| 3 captains tool | product-context or tool-for-users or user-types | design-review, product-context / design-review / design-review, product-context | 2/3 | 0 |
+| 4 brain backend | backend-design-review or design-review; not dashboard-design, ui-craft | design-review / design-review / design-review | 3/3 | 0 |
+| 5 log rotation | none | none / none / none | 3/3 | 0 |
+
+Cost ~$6.45 for 18 runs on Opus.
+
+- **Goal 2 misses its planning-phase target (0/3) by design.** use-available-skills holds build skills back until the build phase, and ui-craft is the build skill (Decision 1); every run said so and picked design-review, whose UI domain is the planning-time review. Row 2b shows the path that matters: as a build milestone, ui-craft is matched 3/3. dashboard-design used to slip through the planning filter.
+- **Goal 3** reaches product-context in 2 of 3 runs; the third skips it as scope beyond the goal. plan-this's design pass runs product-context explicitly whenever the repo has no `PRODUCT.md`, so planning doesn't depend on this routing.
+- **Goal 4** picks design-review and never ui-craft; **goal 5** picks nothing.
+- **Asks after a design skill**: 0 everywhere. `-p` suppresses question cards, so the interactive check below is the real evidence.
+
+### Interactive check (tmux)
+
+`/design:design-review plans/plan-tickets.md` in an interactive session on a small paid-tickets plan: the skill printed its full output (Verdict through Open questions, four questions with recommended options), then loaded `workflow:interview`, and the first question card came from interview. The session transcript has no AskUserQuestion before the interview Skill call, and no file was written (Decision 9).
+

@@ -151,3 +151,17 @@ design               user-types                       ~110 tok
 
 4 skills, ~591 tokens always-on
 ```
+
+## Design plugin restructure: after (2026-11-01)
+
+Same script on the `design-2` branch, design 2.0.0:
+
+```
+design               design-review                    ~118 tok
+design               product-context                  ~68 tok
+design               ui-craft                         ~120 tok
+
+3 skills, ~306 tokens always-on
+```
+
+Before ~591 → after **~306 tokens** (−285, −48%), within the 650-token budget.
