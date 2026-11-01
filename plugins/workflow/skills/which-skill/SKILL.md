@@ -12,15 +12,16 @@ Before stating what a skill does or recommending a step be skipped, read that sk
 
 A **flow** is a path through the skills. Most work travels the **main flow**; **on-ramps** generate work that merges onto it; everything else is standalone or a vocabulary layer underneath.
 
-## The main flow: goal → shipped (workflow, engineering)
+## The main flow: goal → shipped (workflow, design, engineering)
 
 1. **`/plan-this`** (workflow) deepens the goal the way a top professional would, researches what already exists (research-this), interviews you over a design tree (interview), and ends with a plan with milestones and checks: saved as a file, handed straight to build-this, or both.
-2. **Branch: is this a multi-session build?**
+2. **Design** (design) runs inside the flow, on goals with users, a UI, a bot or an API. While planning, plan-this runs **product-context** (drafts `PRODUCT.md`, the repo's ranked user-types with MoSCoW needs under permanent IDs; converts a legacy `UX/User_Types.md`) and **design-review** (critiques the design: backend, API contracts, UI and accessibility, UX copy, chat bots, coverage of the user-types). Their Open questions join the interview and their checks land in the milestones' Done when. While building, milestones carry design-review and **ui-craft** (builds any UI so it looks deliberate: theme first, surface modes, states, accessibility, no AI-generated tells) on their Skills lines. Each also runs on its own, for example `/design:design-review` on any plan or existing system.
+3. **Branch: is this a multi-session build?**
    - **No** (the usual case) → **`/build-this`** works the plan milestone by milestone.
    - **Yes** → **`/to-tickets`** (workflow) splits the saved plan into tracer-bullet tickets with blocking edges (local files under `plans/<feature>/tickets/`, or GitHub Issues, as the repo's tracker doc says), then **`/build-this`** works the tickets in blocker order, one session or several. To run them **in parallel** (GitHub tracker only), **`/dispatch`** (workflow) groups them into waves that touch no shared hotspot, writes a tracking issue with a self-contained prompt per ticket (Claude or Codex), and launches a wave as T3 threads when you reply `launch wave N`.
    - **Want it done with no questions?** → **`/solve-this`** runs plan-this and build-this on autopilot, retries until the checks pass, and proves it.
-3. While building, code gets written test-first with **tdd** (engineering) when the milestone calls for it, and build-this closes with **review-changes** (engineering): a two-axis review (Standards from `CODING_STANDARDS.md`, Spec from the plan or ticket) of the diff. Use **`/review-changes`** on its own to review any branch or PR since a fixed point. **pr** (engineering) shapes the PR body when the work goes up as a pull request.
-4. **`/reflect`** (skill-tools) closes the loop, in the same session: it finds what caused friction and applies up to five lean fixes to notes, skills, checks or coding standards, so the next build starts further ahead.
+4. While building, code gets written test-first with **tdd** (engineering) when the milestone calls for it, and build-this closes with **review-changes** (engineering): a two-axis review (Standards from `CODING_STANDARDS.md`, Spec from the plan or ticket) of the diff. Use **`/review-changes`** on its own to review any branch or PR since a fixed point. **pr** (engineering) shapes the PR body when the work goes up as a pull request.
+5. **`/reflect`** (skill-tools) closes the loop, in the same session: it finds what caused friction and applies up to five lean fixes to notes, skills, checks or coding standards, so the next build starts further ahead.
 
 **Design questions on paper won't settle?** Detour through **`/prototype`** (engineering): throwaway code that answers one question (a state model, a UI), captured into the plan or ticket.
 
@@ -35,12 +36,6 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 - **`/improve-codebase-architecture`** surveys the codebase for deepening opportunities and interviews you through the one you pick; the result is a goal to take into `/plan-this`.
 - **codebase-design** is the deep-module vocabulary (module, interface, depth, seam, adapter) for designing a module's shape. tdd and improve-codebase-architecture both speak it.
 - **domain-modeling** sharpens the project's domain language: challenge a fuzzy term, keep `GLOSSARY.md` clean, record a hard-to-reverse decision as an ADR.
-
-## Design and UX (design)
-
-- **design-review**: critique and shape a design while it's planned, or review an existing one: backend, API contracts, UI and accessibility, UX copy, chat bots, and coverage of `PRODUCT.md` user-types.
-- **ui-craft**: build or critique any UI so it looks deliberate: reads the theme first, then surface modes (Operate, Persuade, Read, Experience, Converse), states, accessibility and the AI-generated tells.
-- **product-context**: draft or update `PRODUCT.md`, the repo's ranked user-types with MoSCoW needs under permanent IDs; converts a legacy `UX/User_Types.md`.
 
 ## Standalone (workflow)
 
