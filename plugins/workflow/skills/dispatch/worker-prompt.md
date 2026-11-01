@@ -26,7 +26,7 @@ Areas: <areas>. Shared files other workers may also change: <hotspots and shared
    d. When the answer arrives: gh issue comment <n> --body "decided: <the answer in one line>", then gh issue edit <n> --remove-label "<decision label>", and carry on.
 6. Run the checks until they all pass: <check commands>. Then commit.
 7. Verify: run <verify command>, then poll <verify status command> until it reports a final result. Done when it reports ok. On a failure, read the log it names, fix, commit, and verify again.
-   [Without a verify command: drop this step; the checks in step 6 are the verification.]
+   [Without a verify command: drop this step and write "Verify: none configured" in the PR body; the checks in step 6 are the verification.]
 8. Review, by a reviewer from the other provider that sees only the issue and your diff:
    a. Build its input, one line at a time:
       mkdir -p /tmp/review-<n>
@@ -35,7 +35,7 @@ Areas: <areas>. Shared files other workers may also change: <hotspots and shared
       { printf '\n## Issue\n\n'; gh issue view <n> --json title,body; printf '\n## Diff\n\n'; git diff origin/<default branch>...HEAD; } >> /tmp/review-<n>/input.md
    b. Run the reviewer (<reviewer>), then read /tmp/review-<n>/review.md:
       <review command>
-   c. Fix every blocker and major finding, or answer it in one line when it is wrong; minor ones are your call. After a fix, commit, run step 7 again, and review again from (a). At most 2 rounds. Done when the verdict is pass, or after round 2 with each finding fixed (note the commit) or answered.
+   c. Fix each finding, or answer it in one line when it is wrong or not worth the change. After a fix, commit, run step 7 again, and review again from (a). At most 2 rounds. Done when the verdict is pass, or after round 2 with each finding fixed (note the commit) or answered.
    [Without a review command: drop this step and write "Review: none configured" in the PR body.]
 9. Push <branch> and open the PR. Write the body to a file outside this worktree:
       Fixes #<n>
@@ -56,7 +56,7 @@ Areas: <areas>. Shared files other workers may also change: <hotspots and shared
 10. Wait for CI: run gh pr checks <pr> every few minutes until no check is pending (--watch can outlast the 8-minute limit; "no checks reported" means the repo has no CI: treat it as green). When the last line of this prompt is not "merge if green", stop here once CI is green.
 11. Merge, only when the last line of this prompt is "merge if green".
    [With a land command:] Land the PR with <land command>, then poll <land status command> until it reports a final result, and read the log it names when it fails. When it fails with "main is red: #<m>", main is broken and nothing merges until it is fixed: run gh issue comment <n> --body "waiting on main (#<m>)", end your turn with a plain-text message saying your PR is green and waiting on main #<m>, and wait. Keep your claim. When the user says main is green, land again.
-   [Without a land command:] Check main first: <main health command>. Green: merge with gh pr merge <pr> --squash, then delete the branch with git push origin --delete <branch> (gh's --delete-branch fails inside a worktree). Pending: re-run it every few minutes, up to 30 minutes. Red: find the open issue titled "Main is red: <sha>" (gh issue list --state open --search "in:title Main is red") or create it with the failing run's URL and "@<owner>", then park as in the land case above with that issue's number.
+   [Without a land command:] Check main first: <main health command>. Green: merge with gh pr merge <pr> --squash, then delete the branch with git push origin --delete <branch> (gh's --delete-branch fails inside a worktree). Pending: re-run it every few minutes; still pending after 30 minutes, stop and report that main is pending, keeping your claim. Red: main is broken. List the open red-main issue with gh issue list --state open --search 'in:title "Main is red"' --json number,url. When one is open, add this failure to it: gh issue comment <m> --body "<run url> (seen by #<n>)". When none is, open it: gh issue create --title "Main is red: $(git rev-parse --short origin/<default branch>)" --body "@<owner> main is red: <run url>". When your PR body says "Fixes #<m>", merge anyway: your PR is the fix. Otherwise park as in the land case above with that issue's number.
 12. Release the issue when it merged or when you give up:
    Merged: gh issue comment <n> --body "released: done in #<pr>"
    Gave up or blocked: gh issue comment <n> --body "released: <reason>"
