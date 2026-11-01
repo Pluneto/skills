@@ -2,6 +2,21 @@
 
 Screens, flows, forms, accessibility and wording, reviewed as the people who will use them. For how to build the UI (layout, colour, disclosure, the AI-tells), ui-craft is the build-phase skill; this file is the review.
 
+## Heuristics
+
+Walk each screen once against these (after Nielsen):
+
+- **Status is visible**: the user always knows where they are, what is happening, and whether their last action worked.
+- **The product's words, the user's world**: labels and order match how users think about the task, not the database.
+- **Control and freedom**: back, cancel and undo work everywhere; there is a way out of every state.
+- **Consistency**: the same action has the same name, place and look everywhere, and patterns match the rest of the app and the platform.
+- **Errors prevented first**: constraints, defaults and confirmation before costly steps beat good error messages after.
+- **Recognition over recall**: options, recent items and the current state are shown, not remembered.
+- **Efficiency for the frequent**: shortcuts, bulk actions and remembered choices for returning users, without burdening first-timers.
+- **Focused design**: each screen shows what serves its main task; everything else is disclosed on demand.
+- **Recovery**: errors say what happened and how to fix it.
+- **Help in context**: hints, empty states and tooltips where the question arises, in the same place on every page.
+
 ## Flows and journeys
 
 A journey is one way a user-type moves through the feature: **intent → arrival → use → outcome**. For each target user-type's main intent (highest rank first, from `PRODUCT.md` when it exists):
@@ -21,7 +36,6 @@ A journey is one way a user-type moves through the feature: **intent → arrival
 - **Destructive or costly actions** are confirmed in proportion to their cost, and undoable where possible (undo beats "are you sure?").
 - **Forms**: a visible label per field, the format shown up front, validation inline after the field is left, errors next to the field and summarised at the top, input kept on error, sensible defaults, no asking twice for what the product knows (WCAG 3.3.7).
 - **Feedback** for every action within about a second: a state change, a toast, a spinner on the control that started it.
-- **Consistency**: the same action has the same name, place and look everywhere; patterns match what the rest of the app already does.
 
 ## Accessibility (WCAG 2.2 AA)
 

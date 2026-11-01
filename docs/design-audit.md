@@ -25,7 +25,7 @@ Across every session transcript under `~/.claude/projects/`:
 
 ## Routing test
 
-`scripts/route-test` (5 goals × 3 runs, use-available-skills invoked directly in the planning phase, scratch clones of zephyr-homelab, brain-of-omniscience and cortana, default model).
+`scripts/route-test` (6 goals × 3 runs, use-available-skills invoked directly in the planning phase plus one build-phase record-only goal, scratch clones of zephyr-homelab, brain-of-omniscience and cortana, default model).
 
 ### Before (design 1.0.1)
 
@@ -56,7 +56,12 @@ Cost ~$6.45 for 18 runs on Opus.
 - **Goal 2 misses its planning-phase target (0/3) by design.** use-available-skills holds build skills back until the build phase, and ui-craft is the build skill (Decision 1); every run said so and picked design-review, whose UI domain is the planning-time review. Row 2b shows the path that matters: as a build milestone, ui-craft is matched 3/3. dashboard-design used to slip through the planning filter.
 - **Goal 3** reaches product-context in 2 of 3 runs; the third skips it as scope beyond the goal. plan-this's design pass runs product-context explicitly whenever the repo has no `PRODUCT.md`, so planning doesn't depend on this routing.
 - **Goal 4** picks design-review and never ui-craft; **goal 5** picks nothing.
-- **Asks after a design skill**: 0 everywhere. `-p` suppresses question cards, so the interactive check below is the real evidence.
+- **Asks after a design skill**: 0 everywhere, but the count only starts at a real design Skill call, and most runs record their picks without one. `-p` suppresses question cards, so the interactive check below is the real evidence.
+
+### Skill runs (M2, M3)
+
+- **product-context dry run**: Draft on a scratch copy of zephyr-homelab's `UX/User_Types.md` (outside the repo), called as from plan-this. It returned all 11 types verbatim with a Rank line each and wrote nothing. The ID grep diff (`grep -oE '\b(UT-[0-9]+(-[MSCW][0-9]+)?|BL-[MSCW][0-9]+)\b' | sort -u`) between the old file and the Draft section was empty, and every requirement row matched word for word (only the old Index rows went, by design). Open question 1 was the rank order (recommended: members first), and question 2 asked whether to keep all 11 types.
+- **design-review sample run**: `claude -p` stream-json on a five-step paid-tickets plan, called as from plan-this. It read the backend, API, UI and converse references, and returned every section of the output shape (Verdict, Assumptions with Capacity and horizon, Alternatives, Findings as Blocker, Major and Minor, Decisions for the plan, Checks for Done when) plus four Open questions, each with its recommended option first. It made 0 AskUserQuestion calls and wrote no files.
 
 ### Interactive check (tmux)
 
