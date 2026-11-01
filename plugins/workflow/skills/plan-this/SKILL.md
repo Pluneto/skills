@@ -61,11 +61,11 @@ When the goal comes from a wayfinder map (`plans/<effort>/map.md` or its issue),
 
 ## 3. Confirm shared understanding
 
-Summarise in plain language: the deepened goal, every decision with its choice, the milestones with their "done when" checks and skills (each with its one-line reason), how success will be checked overall, and the main risks. Keep it scannable. Then ask: *"Does this match what you want?"* If not, the answer reshapes the tree; go back to step 2 for the affected branches only.
+Summarise in plain language: the deepened goal, every decision with its choice, the milestones with their "done when" checks and skills (each with its one-line reason), how success will be checked overall, and the main risks. Keep it scannable. Then ask *"Does this match what you want?"* as the only question in that call; never bundle step 4's question with it. Any change or addition in the answer, even a small one, sends you back to step 2 for the affected branches (research if needed, interview, record the decision), then repeat this step with the revised summary. Go to step 4 only after a plain yes.
 
 ## 4. Next step
 
-Ask with the question tool what to do next, recommending by situation: **Build it now** (recommended when you're working inside a project or workspace where the work can actually be done), **Save a Markdown plan** (recommended when the work happens elsewhere or later), or **Save the plan, then build**.
+Once step 3 got a plain yes, ask with the question tool what to do next, recommending by situation: **Build it now** (recommended when you're working inside a project or workspace where the work can actually be done), **Save a Markdown plan** (recommended when the work happens elsewhere or later), or **Save the plan, then build**.
 
 Milestones are the unit of work by default. Only when the work spans several sessions or parallel agents, add one line after the question: the user can save the plan and type `/to-tickets` on it to split it into tickets with blockers, and build-this then works those tickets in order.
 
