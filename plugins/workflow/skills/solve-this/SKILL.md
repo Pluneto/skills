@@ -17,13 +17,14 @@ Confirm **plan-this**, **interview**, **build-this** and **research-this** are a
 Run /plan-this with these changes:
 - Run it in **autopilot**, and pass autopilot on to every skill it invokes (interview, and any skill a later step calls): answer every question yourself, take the recommended option and record it as an *autopilot default*. Research facts instead of guessing, using plan-this's research-this calls at the depth plan-this sets, without adding runs of your own (take its verdict as the recommended option, and note its Gaps as assumptions); use a marked placeholder for anything only the user knows.
 - Let plan-this's skills step run as written: it asks nothing, so it needs no change. The skills it picks end up in the plan.
+- Let plan-this's Independent review run: in autopilot it runs without asking, fixes what it can, and answers re-opened decisions with the recommended option.
 - Skip all approval, confirmation and next-step questions. Save the plan file and go straight to building.
 - Ask a question only once, up front, and only if the goal has two readings that lead to completely different work. Otherwise state your reading in one line.
 - Every milestone needs a **done when** check that runs without a human, and the plan needs at least one check from outside the conversation (test, measurement, validator, standard). Those checks are the proof in step 4.
 
 ## 2. Build
 
-Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model question and up-front collection (use placeholders; secrets by variable name only). Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
+Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model question and up-front collection (use placeholders; secrets by variable name only); for long plans its orchestrator mode picks each sub-agent's model itself. Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
 
 ## 3. Keep going until solved
 

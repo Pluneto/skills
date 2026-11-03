@@ -29,6 +29,10 @@ If there's no plan, look at the size of the request. Small and clear: just build
 
 Read the plan once, carefully, and set up the task list: one item per milestone, in order, plus a final "check everything and report" item. Note each milestone's **done when** check (and its **Skills** line, if it has one); those checks are how you'll know a milestone is really finished, so if a milestone has none, write the obvious one yourself (the test that should pass, the page that should load, the file that should exist) rather than asking.
 
+**Resume, don't redo.** Ticked milestones and a `## Build log` in the plan file mean an earlier run got that far: trust the log and start at the first unticked milestone.
+
+**Long plans run in orchestrator mode** (3 or more milestones or tickets, whatever their size; see step 4). Save a plan that exists only in this conversation to `plans/plan-<short-topic>.md` first, in plan-this's Saving format, so progress has a file to live in.
+
 If the work happens in a git repository, record the base commit now (`git rev-parse HEAD`) for the review in step 5.
 
 Trust the plan: if you'd have chosen differently, build what it says (see "Solving on the go" for the rare exceptions).
@@ -43,13 +47,15 @@ Ask one question with the question tool (AskUserQuestion in Claude Code; a numbe
 
 Say in one or two lines which Claude model and effort level fits this build, covering both build modes, with a short reason. Recommend the cheapest setup that reliably handles the hardest milestone, not the average one: Haiku for mechanical, fully specified work; Sonnet at medium effort for typical builds; Opus at high effort for subtle-correctness work such as auth, payments, migrations or concurrency. Go one step up for straight-through builds, since no one catches a wrong turn until the end. Use family names (Haiku, Sonnet, Opus), not version numbers.
 
+In orchestrator mode the sub-agents do the building, so apply the same rule per milestone instead: show a short table (milestone, sub-agent model, effort, a few-word reason) in place of the one-line recommendation, and the sub-agents run at those settings.
+
 ### The question
 
 *"Should I build it all straight through, without stopping?"* Put the option that fits the plan first, labelled "(Recommended)", each with a one-line pro and con:
 
 - **Build straight through:** recommended when the steps are reversible and the milestone checks can be run automatically. Pro: the user can walk away and come back to a finished build. Con: a misunderstanding isn't caught until the end, and decisions that come up mid-build are made for them.
 - **Check in after each milestone:** recommended when the plan has risky or hard-to-undo steps, or the user wants to steer as it takes shape. Pro: catch a wrong turn early. Con: the user has to stay around and answer between milestones.
-- **Let me switch model first:** include this when your recommendation differs from the current setup. Pro: the build runs on the right model. Con: one extra message. If chosen, stop here and tell them to send "go" with their build mode once they've switched, since the model can't change in the middle of a turn.
+- **Let me switch model first:** include this when your recommendation differs from the current setup, outside orchestrator mode. Pro: the build runs on the right model. Con: one extra message. If chosen, stop here and tell them to send "go" with their build mode once they've switched, since the model can't change in the middle of a turn.
 
 For goals that aren't really "built" (a training plan, a job search), skip the model recommendation and this question: start the first milestone together, checking in naturally.
 
@@ -92,14 +98,26 @@ Whenever the build involves writing code, follow **KISS** and, for object-orient
 
 ### Every milestone
 
-- Mark it in progress in the task list and load its skills first, from the main agent: those on its **Skills** line (at most 3, skipping any already loaded), with the Skill tool in Claude Code or your harness's way of loading a skill (for a skill that exists only on disk, Read its SKILL.md at the path the plan gives). If a named skill can't be loaded (the plan may come from another chat or machine), skip it, note it in the report and never ask. A line saying "none fit" means load nothing. Before loading a skill, re-check its **Need** against the milestone as it is now, since the work may have shifted or turned out simpler: if the Need no longer holds, skip the skill and log why in one line. If its reason is marked "(description only)", read its body as you load it and drop the skill, noting it, when the body doesn't deliver the **Provides** part. When the plan has no Skills line for the milestone, or says "not checked" (a hand-written plan, an older plan, or one made without the helper), run the **use-available-skills** skill once at the start for all milestones in record-only mode, and load each milestone's matches as it begins. That skill is optional: if it can't be found (look in ~/.claude/skills, .claude/skills and plugin skill folders too, since the listing can drop entries), carry on without it and say so in the report. Never ask the user about skills, and a loaded skill never questions the user either: take its recommended option, log it and keep going. The plan still wins over a skill's advice: build what the plan says, and use a skill for how to do it well.
+- Mark it in progress in the task list and load its skills first, from the main agent (in orchestrator mode the sub-agent reads them instead): those on its **Skills** line (at most 3, skipping any already loaded), with the Skill tool in Claude Code or your harness's way of loading a skill (for a skill that exists only on disk, Read its SKILL.md at the path the plan gives). If a named skill can't be loaded (the plan may come from another chat or machine), skip it, note it in the report and never ask. A line saying "none fit" means load nothing. Before loading a skill, re-check its **Need** against the milestone as it is now, since the work may have shifted or turned out simpler: if the Need no longer holds, skip the skill and log why in one line. If its reason is marked "(description only)", read its body as you load it and drop the skill, noting it, when the body doesn't deliver the **Provides** part. When the plan has no Skills line for the milestone, or says "not checked" (a hand-written plan, an older plan, or one made without the helper), run the **use-available-skills** skill once at the start for all milestones in record-only mode, and load each milestone's matches as it begins. That skill is optional: if it can't be found (look in ~/.claude/skills, .claude/skills and plugin skill folders too, since the listing can drop entries), carry on without it and say so in the report. Never ask the user about skills, and a loaded skill never questions the user either: take its recommended option, log it and keep going. The plan still wins over a skill's advice: build what the plan says, and use a skill for how to do it well.
 - Build it, then **run its done-when check**.
 - If the check fails, fix and re-run it. Don't move on with a failing check. If it still fails after a few honest attempts, note it as a blocker and continue with milestones that don't depend on it.
-- Once the check passes, note in one line what each skill you used actually changed (a step it added, a mistake it prevented, a rule it enforced), or "no visible effect". Be honest: a skill that changed nothing is useful to know about.
+- Once the check passes, tick the milestone in the plan file (a ticket's Finish step is its tick) and append one line to its `## Build log` (format in [milestone-brief.md](milestone-brief.md)): the check result, deviations, and what each skill you used actually changed (a step it added, a mistake it prevented, a rule it enforced), or "no visible effect". Be honest: a skill that changed nothing is useful to know about. The log is what lets a compacted or fresh session carry on.
+
+### Orchestrator mode
+
+For plans with 3 or more milestones or tickets, you are the **orchestrator**: you hold the plan, the decisions and short reports, and a fresh sub-agent builds each milestone, so build detail never enters your context. The count decides, not your sense of size: launch the sub-agent even for a one-line milestone, because the user chose a rule they can predict over a judgement call, and small milestones still add up. (The model can't run `/clear` or `/compact` itself; this is how a long build keeps its context small.) For each milestone, in order (independent ones may run in parallel when they touch different files):
+
+1. Pick the sub-agent's model and effort from the step 2 table (adjust if the milestone turned out harder or easier, and log it).
+2. Resolve the paths of its skills' `SKILL.md` files (plugin skills sit under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/<name>/`; take the newest version) after re-checking each **Need** as in Every milestone. Don't load them yourself: the sub-agent reads them. A skill with no file on disk gets its few key lines pasted into the brief instead.
+3. Fill the brief in [milestone-brief.md](milestone-brief.md) and run the sub-agent in the foreground, passing that model and effort to the sub-agent tool.
+4. Read its report, then **re-run the done-when check yourself**; the report is a claim, the check is the evidence. A failure gets one fresh sub-agent with the failure output in its brief, one model step up; then it's a blocker.
+5. Tick the milestone and write its Build log line. Items the report lists under needs from the user or held for go-ahead follow the Straight through or With check-ins rules below.
+
+Without a sub-agent tool, build each milestone yourself with the same progress record; the harness's own compaction then carries the load and the Build log keeps it lossless.
 
 ### Sub-agents
 
-Use sub-agents (the Agent tool in Claude Code) for research that would otherwise interrupt or clutter the build (docs lookups, how an API behaves, understanding an unfamiliar codebase) and for independent milestones or tasks that can run in parallel. Keep dependent milestones sequential, and don't run parallel agents that edit the same files. Give each sub-agent a self-contained brief: its goal, the files or area it owns, and its done-when check, plus, as plain text, the few lines of guidance it needs from the skills you loaded (sub-agents often can't see skills, and naming one in a brief can trigger it inside the sub-agent). Where a sub-agent accepts a model and effort setting, run it at the recommended setup instead of asking the user to switch. Verify each result against the milestone's done-when check before marking it done.
+Outside orchestrator mode, use sub-agents (the Agent tool in Claude Code) for research that would otherwise interrupt or clutter the build (docs lookups, API behaviour, an unfamiliar codebase) and for independent milestones or tasks that can run in parallel. Keep dependent milestones sequential, and don't run parallel agents that edit the same files. Give each sub-agent a self-contained brief: its goal, the files or area it owns, and its done-when check, plus, as plain text, the few lines of guidance it needs from the skills you loaded (sub-agents often can't see skills, and naming one in a brief can trigger it inside the sub-agent). Where a sub-agent accepts a model and effort setting, run it at the recommended setup. Verify each result against the milestone's done-when check before marking it done.
 
 ### Straight through
 
@@ -112,15 +130,7 @@ The user handed over the whole build, so don't ask between milestones. Keep goin
 
 After each milestone, give a short status (what was built, its check result, any deviations), then ask with the question tool whether to continue or adjust. When the user must act first (a live test, console or consent steps), give those steps as plain text and end the turn instead of asking with the question tool: the question box hides text written just before it. Fold any genuinely open choice that came up into that same check-in question rather than interrupting mid-milestone. Small decisions are still yours; bring only the ones that meaningfully change what the user gets.
 
-Always include **"Write a handoff file"** as one of the check-in options (alongside continue and adjust), because a check-in is the natural moment to stop and resume in a fresh session with a clean context. If the user picks it, write the handoff yourself without asking anything further, tell them its full path, then repeat the continue/adjust question so the build carries on if they want.
-
-**The handoff file** is a short Markdown document that lets a fresh agent continue the build:
-
-- **Location:** the temporary directory of the user's OS (`$TMPDIR`, else `/tmp`; `%TEMP%` on Windows), never the project workspace. Name it `handoff-<short-topic>.md`.
-- **Content:** where the build stands (milestones done with their check results, the one in progress, what remains), deviations and decisions made so far with their one-line reasons, blockers, and the "can wait" items still owed by the user. If the user said what the next session will focus on, tailor the document to it.
-- **Don't duplicate** what other artifacts already hold (the plan file, specs, issues, commits, diffs): reference them by path or URL instead of copying them in.
-- **Suggested skills:** a section naming the skills the next agent should load with the Skill tool, taken from the plan's Skills lines and the skills that actually changed something so far, each with a one-line reason.
-- **Redact** API keys, passwords and personal data (ID or account numbers, addresses): say where a secret lives (for example a named variable in `.env`), never its value.
+Always include **"Write a handoff file"** as one of the check-in options (alongside continue and adjust), because a check-in is the natural moment to stop and resume in a fresh session with a clean context. If the user picks it, write the handoff yourself as [milestone-brief.md](milestone-brief.md#the-handoff-file) describes, without asking anything further, tell them its full path, then repeat the continue/adjust question so the build carries on if they want.
 
 ---
 
