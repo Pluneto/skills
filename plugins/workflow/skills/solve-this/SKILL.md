@@ -24,7 +24,7 @@ Run /plan-this with these changes:
 
 ## 2. Build
 
-Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model question and up-front collection (use placeholders; secrets by variable name only); for long plans its orchestrator mode picks each sub-agent's model itself. Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
+Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model and sub-agent questions and up-front collection (use placeholders; secrets by variable name only); with 3 or more milestones or tickets it builds each in a sub-agent and picks their models itself. Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
 
 ## 3. Keep going until solved
 

@@ -1,0 +1,12 @@
+# Working tickets and issues
+
+Tickets come from /to-tickets as local files (`plans/<feature>/tickets/`) or GitHub issues, or are GitHub issues the user names directly (`build #12 #14`, or issue URLs). Work them by `docs/agents/issue-tracker.md` (its Claim, Release and Parallel work sections), or, when the repo has none, by the defaults in [no-tracker-doc.md](no-tracker-doc.md). Each ticket is a milestone, and its acceptance criteria are its done-when check.
+
+- **Read** each ticket whole: the file, or `gh issue view <n> --comments` for an issue, plus the plan or parent issue it was split from when it names one.
+- **Order:** blocker order. A ticket starts once every ticket in its `Blocked by` is done. When the user named the issues, they are the set: a blocker outside it that is still open holds its ticket back; report it.
+- **Human tickets** (the human label, or `Who: human`) are the user's: skip them, keep working every agent ticket they don't block, and list them in the report with what each needs.
+- **Claim** each ticket before its first change, as the tracker doc's Claim says. When the claim is lost, another worker holds it: leave that ticket and the tickets it blocks, and report the winning claim.
+- **Finish** each ticket when its check passes. On GitHub, open the PR with `Fixes #<n>` in its body and wait for green CI. Merging publishes, so land it (the doc's Land command, polling its status command, or the blank field's fallback) only when the user said so, for example "merge if green" with the build mode; then release as in the doc's Release (Done). Without that go-ahead, list the green PRs under "What's left for you" and keep the claims: the open PRs hold the tickets. Locally, set `Status: resolved`.
+- **Resume:** a resolved local ticket or a closed issue is done. A ticket with an open PR from an earlier run is waiting on its go-ahead: list it rather than rebuilding it.
+- **With sub-agents:** you claim each ticket before launching its sub-agent and finish it after re-running its check yourself, since claims, PRs and landing need the tracker doc's commands and the user's go-ahead; the sub-agent only builds. Fill the brief's ticket line in [milestone-brief.md](milestone-brief.md) so it reads the ticket itself.
+- **Progress record:** the ticket's own status is its tick. Build log lines go in the plan file the tickets were split from; with no plan file, append it under a `## Build log` heading in that ticket's own file, or post it as a comment on the issue.
