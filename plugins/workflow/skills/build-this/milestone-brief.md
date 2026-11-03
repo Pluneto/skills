@@ -8,7 +8,7 @@ In orchestrator mode, fill the `<…>` fields for each milestone's sub-agent and
 You are building one milestone of an agreed plan. The plan's decisions are settled: build what it says.
 
 Plan file: <path>. Read its Goal, Constraints and Decisions, and the milestone below; other milestones belong to other workers.
-[For a ticket: Ticket: <path or issue URL>, its acceptance criteria are the Done when; the plan file is the one it was split from, or drop that line when there is none.]
+[For a ticket: Ticket: <path, or issue number and URL>. Read it whole (`gh issue view <n> --comments` for an issue); its acceptance criteria are the Done when. The plan file is the one it was split from; drop that line when there is none.]
 Milestone: <M<n>. title>
 Steps: <the milestone's checkbox steps>
 Done when: <the check, with the exact command to run>
@@ -37,7 +37,7 @@ Method: <what each method file changed, or "no visible effect", or none>
 
 ## The Build log
 
-Append a `## Build log` section at the end of the plan file the first time a milestone finishes or blocks, then add one line per milestone, blocked ones included (left unticked). For tickets, log in the plan file they were split from; with none, the ticket's own status and a comment on it are the record.
+Append a `## Build log` section at the end of the plan file the first time a milestone finishes or blocks, then add one line per milestone, blocked ones included (left unticked). For tickets, [tickets.md](tickets.md) says where the log goes.
 
 ```
 - M<n> <title> (<model>, <effort> | main agent): check pass|fail - <one-line result>; deviations: <…|none>; owed: <needs from user and held steps, or none>; skills: <skill: what it changed|none>

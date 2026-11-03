@@ -15,10 +15,7 @@ Use the first of these that exists:
 
 1. **The plan agreed earlier in this conversation** (the usual case when /plan-this hands off): the deepened goal, decisions, milestones and checks from its confirmed summary.
 2. **A plan file** passed as the skill's argument, attached, or in the project (`plans/plan-*.md`, or `plan-*.md` in the root). Read all of it.
-3. **Tickets from /to-tickets**: a folder (`plans/<feature>/tickets/`) or an issue list, worked by `docs/agents/issue-tracker.md` (its Claim, Release and Parallel work sections), or, when the repo has none, by the defaults in [no-tracker-doc.md](no-tracker-doc.md). Each ticket is a milestone and its acceptance criteria are its done-when check. Work them in blocker order (a ticket starts once every ticket in its `Blocked by` is done).
-   - **Human tickets** (the human label, or `Who: human`) are the user's: skip them, keep working every agent ticket they don't block, and list them in the report with what each needs.
-   - **Claim** each ticket before its first change, as the tracker doc's Claim says. When the claim is lost, another worker holds it: leave that ticket and the tickets it blocks, and report the winning claim.
-   - **Finish** each ticket when its check passes. On GitHub, open the PR with `Fixes #<n>` in its body and wait for green CI. Merging publishes, so land it (the doc's Land command, polling its status command, or the blank field's fallback) only when the user said so, for example "merge if green" with the build mode; then release as in the doc's Release (Done). Without that go-ahead, list the green PRs under "What's left for you" and keep the claims: the open PRs hold the tickets. Locally, set `Status: resolved`.
+3. **Tickets or issues**: a /to-tickets folder (`plans/<feature>/tickets/`), a GitHub issue list, or issues the user names. Each ticket is a milestone and its acceptance criteria are its done-when check. Read [tickets.md](tickets.md) before the first one: it covers blocker order, human tickets, claiming, finishing, resuming and sub-agents for tickets.
 4. **A plan the user wrote themselves**, in a message or a document.
 
 If there's no plan, look at the size of the request. Small and clear: just build it, treating the request as a one-milestone plan. Big or ambiguous: offer /plan-this in one line (*"This has a lot of open choices. Want to plan it first with /plan-this, or should I just build with sensible defaults?"*) and go with their answer.
@@ -29,9 +26,9 @@ If there's no plan, look at the size of the request. Small and clear: just build
 
 Read the plan once, carefully, and set up the task list: one item per milestone, in order, plus a final "check everything and report" item. Note each milestone's **done when** check (and its **Skills** line, if it has one); those checks are how you'll know a milestone is really finished, so if a milestone has none, write the obvious one yourself (the test that should pass, the page that should load, the file that should exist) rather than asking.
 
-**Resume, don't redo.** Ticked milestones and a `## Build log` in the plan file mean an earlier run got that far: trust the log and start at the first unticked milestone.
+**Resume, don't redo.** Ticked milestones and a `## Build log` in the plan file (for tickets, resolved or closed ones) mean an earlier run got that far: trust the log and start at the first unfinished milestone.
 
-**Long plans run in orchestrator mode** (3 or more milestones or tickets, whatever their size; see step 4). Save a plan that exists only in this conversation to `plans/plan-<short-topic>.md` first, in plan-this's Saving format, so progress has a file to live in.
+**Orchestrator mode** builds each milestone in a fresh sub-agent so the main context stays small (see step 4); step 2 asks whether to use it. Before an orchestrated build, save a plan that exists only in this conversation to `plans/plan-<short-topic>.md`, in plan-this's Saving format, so progress has a file to live in.
 
 If the work happens in a git repository, record the base commit now (`git rev-parse HEAD`) for the review in step 5.
 
@@ -41,23 +38,30 @@ Trust the plan: if you'd have chosen differently, build what it says (see "Solvi
 
 ## 2. Choose how to build
 
-Ask one question with the question tool (AskUserQuestion in Claude Code; a numbered plain-text question elsewhere), and put the model recommendation in the same message.
+Ask two questions in one call of the question tool (AskUserQuestion in Claude Code; numbered plain-text questions elsewhere), sub-agents first, and put the model recommendation in the same message. Ask them however small the plan is: how to build is the user's call. Skip them only under solve-this's autopilot (then: sub-agents at 3 or more milestones or tickets, straight through) or for an answer the user already gave.
 
 ### Recommend a model and effort
 
 Say in one or two lines which Claude model and effort level fits this build, covering both build modes, with a short reason. Recommend the cheapest setup that reliably handles the hardest milestone, not the average one: Haiku for mechanical, fully specified work; Sonnet at medium effort for typical builds; Opus at high effort for subtle-correctness work such as auth, payments, migrations or concurrency. Go one step up for straight-through builds, since no one catches a wrong turn until the end. Use family names (Haiku, Sonnet, Opus), not version numbers.
 
-In orchestrator mode the sub-agents do the building, so apply the same rule per milestone instead: show a short table (milestone, sub-agent model, effort, a few-word reason) in place of the one-line recommendation, and the sub-agents run at those settings.
+When you recommend sub-agents, they do the building, so apply the same rule per milestone instead: show a short table (milestone, sub-agent model, effort, a few-word reason) in place of the one-line recommendation. If the user picks the other answer, apply the matching rule yourself and state your picks in one line before building.
 
-### The question
+### The sub-agent question
+
+*"Should each milestone be built by its own fresh sub-agent, with me only coordinating?"* Recommend yes for 3 or more milestones or tickets, no below that:
+
+- **Use sub-agents:** Pro: the main context stays small, so a long build doesn't lose detail to compaction, and each milestone gets a model matched to it. Con: slower and costlier on small milestones, and their work is less visible.
+- **Build in this conversation:** Pro: faster on small plans, and every step is visible. Con: context fills on long builds.
+
+### The build-mode question
 
 *"Should I build it all straight through, without stopping?"* Put the option that fits the plan first, labelled "(Recommended)", each with a one-line pro and con:
 
 - **Build straight through:** recommended when the steps are reversible and the milestone checks can be run automatically. Pro: the user can walk away and come back to a finished build. Con: a misunderstanding isn't caught until the end, and decisions that come up mid-build are made for them.
 - **Check in after each milestone:** recommended when the plan has risky or hard-to-undo steps, or the user wants to steer as it takes shape. Pro: catch a wrong turn early. Con: the user has to stay around and answer between milestones.
-- **Let me switch model first:** include this when your recommendation differs from the current setup, outside orchestrator mode. Pro: the build runs on the right model. Con: one extra message. If chosen, stop here and tell them to send "go" with their build mode once they've switched, since the model can't change in the middle of a turn.
+- **Let me switch model first:** include this when your recommendation differs from the current setup and you recommend building in this conversation. Pro: the build runs on the right model. Con: one extra message. If chosen, stop here and tell them to send "go" with their build mode once they've switched, since the model can't change in the middle of a turn.
 
-For goals that aren't really "built" (a training plan, a job search), skip the model recommendation and this question: start the first milestone together, checking in naturally.
+For goals that aren't really "built" (a training plan, a job search), skip the model recommendation and these questions: start the first milestone together, checking in naturally.
 
 ---
 
@@ -105,7 +109,7 @@ Whenever the build involves writing code, follow **KISS** and, for object-orient
 
 ### Orchestrator mode
 
-For plans with 3 or more milestones or tickets, you are the **orchestrator**: you hold the plan, the decisions and short reports, and a fresh sub-agent builds each milestone, so build detail never enters your context. The count decides, not your sense of size: launch the sub-agent even for a one-line milestone, because the user chose a rule they can predict over a judgement call, and small milestones still add up. (The model can't run `/clear` or `/compact` itself; this is how a long build keeps its context small.) For each milestone, in order (independent ones may run in parallel when they touch different files):
+When step 2 chose sub-agents, you are the **orchestrator**: you hold the plan, the decisions and short reports, and a fresh sub-agent builds each milestone, so build detail never enters your context. Once chosen, launch a sub-agent for every milestone, however small: the user chose a rule they can predict over a judgement call, and small milestones add up. For tickets, [tickets.md](tickets.md) says who claims and finishes. (The model can't run `/clear` or `/compact` itself; this is how a long build keeps its context small.) For each milestone, in order (independent ones may run in parallel when they touch different files):
 
 1. Pick the sub-agent's model and effort from the step 2 table (adjust if the milestone turned out harder or easier, and log it).
 2. Resolve the paths of its skills' `SKILL.md` files (plugin skills sit under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/<name>/`; take the newest version) after re-checking each **Need** as in Every milestone. Don't load them yourself: the sub-agent reads them. A skill with no file on disk gets its few key lines pasted into the brief instead.
@@ -117,7 +121,7 @@ Without a sub-agent tool, build each milestone yourself with the same progress r
 
 ### Sub-agents
 
-Outside orchestrator mode, use sub-agents (the Agent tool in Claude Code) for research that would otherwise interrupt or clutter the build (docs lookups, API behaviour, an unfamiliar codebase) and for independent milestones or tasks that can run in parallel. Keep dependent milestones sequential, and don't run parallel agents that edit the same files. Give each sub-agent a self-contained brief: its goal, the files or area it owns, and its done-when check, plus, as plain text, the few lines of guidance it needs from the skills you loaded (sub-agents often can't see skills, and naming one in a brief can trigger it inside the sub-agent). Where a sub-agent accepts a model and effort setting, run it at the recommended setup. Verify each result against the milestone's done-when check before marking it done.
+Outside orchestrator mode, use sub-agents (the Agent tool in Claude Code) for research that would otherwise interrupt or clutter the build (docs lookups, API behaviour, an unfamiliar codebase) and for independent tasks that can run in parallel. Keep dependent milestones sequential, and don't run parallel agents that edit the same files. Give each sub-agent a self-contained brief: its goal, the files or area it owns, and its done-when check, plus, as plain text, the few lines of guidance it needs from the skills you loaded (sub-agents often can't see skills, and naming one in a brief can trigger it inside the sub-agent). Where a sub-agent accepts a model and effort setting, run it at the recommended setup. Verify each result against the milestone's done-when check before marking it done.
 
 ### Straight through
 
