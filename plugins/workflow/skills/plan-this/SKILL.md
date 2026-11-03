@@ -8,7 +8,7 @@ compatibility: Requires the research-this and interview skills. The use-availabl
 
 Turn a goal into a plan that is **deeper, not bigger**, researched before anything is decided, and agreed to by the user decision by decision.
 
-This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration to find facts is fine, and the only file written is the saved plan.
+This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration to find facts is fine, and the only files written are the saved plan and the Independent review's temp files.
 
 ## 0. Check requirements first
 
@@ -64,6 +64,18 @@ Use the decisions it hands back for step 3.
 
 When the goal comes from a wayfinder map (`plans/<effort>/map.md` or its issue), the map's settled decisions are fixed: deepen and interview only the gaps the map leaves open, and cite the map in the plan's Goal section.
 
+### Independent review
+
+Once the interview is done and the milestones are known, ask on its own, with the question tool: *"Should another model review the plan before you confirm it?"* (Recommended: yes. Pro: a reader who wasn't in this conversation catches gaps and false facts. Con: a few minutes, and the other provider's usage.) In autopilot, run it without asking.
+
+If yes, follow [plan-review.md](plan-review.md): the draft plan goes, with the user's original request, to a **reviewer from another provider** (from Claude, Codex; from Codex, Claude) that can read the project but change nothing, or to a fresh sub-agent when that CLI is missing or fails. Verify each finding yourself before acting on it, since reviewers can be wrong; drop a false one with a one-line reason. Then:
+
+- **fixable** (a missing step or check, a wrong path, an inconsistency no user decision touches): fix the plan.
+- **needs decision** (a decision is missing, or rests on a false fact): go back to the interview for the affected branches only; settled decisions stay settled.
+- **Scope creep**, whatever its tag: a finding or fix that adds work the approved goal and its checks don't need (a new feature, option, tool or milestone). Push back: decline it with a one-line reason and leave the plan as it is, because the goal the user approved is the scope and only the user widens it. A gap the goal itself needs is not creep.
+
+Review again only when the first pass changed the plan, and stop after 2 passes; leftover findings go under Risks. Step 3's summary lists every finding and how it was handled (fixed, re-asked, declined as scope creep, or dropped as false), plus the reviewer's Out of scope ideas in one line.
+
 ## 3. Confirm shared understanding
 
 Summarise in plain language: the deepened goal, every decision with its choice, the milestones with their "done when" checks and skills (each with its one-line reason), how success will be checked overall, and the main risks. Keep it scannable. Then ask *"Does this match what you want?"* as the only question in that call; never bundle step 4's question with it. Any change or addition in the answer, even a small one, sends you back to step 2 for the affected branches (research if needed, interview, record the decision), then repeat this step with the revised summary. Go to step 4 only after a plain yes.
@@ -80,7 +92,7 @@ If they choose to build (with or without saving first), invoke the **build-this*
 
 Write `plan-<short-topic>.md` (e.g. `plan-bakery-website.md`) and make it self-contained so a fresh Claude with no other context can act on it; save it in the project's `plans/` folder (create it if missing), never the project root, so plans don't clutter it and /build-this has a place to archive them when done; if there is no project, send it as a file. Start with a title and the line *"Created <date> with /plan-this. Attach this file to a Claude chat and run /build-this (or say "build this plan") to continue."* Then these sections, in order:
 
-- **Goal:** the original request in the user's words, the approved deepened goal, and **Constraints** (everything the user restricted or required; for plans that involve code also "Code follows KISS, and SOLID for object-oriented code"), plus a line **Skills used while planning:** the skills loaded in step 2, each with its reason line, or "none" (with any near-miss notes the helper returned), or "not checked (helper not found)".
+- **Goal:** the original request in the user's words, the approved deepened goal, and **Constraints** (everything the user restricted or required; for plans that involve code also "Code follows KISS, and SOLID for object-oriented code"), plus a line **Skills used while planning:** the skills loaded in step 2, each with its reason line, or "none" (with any near-miss notes the helper returned), or "not checked (helper not found)". Then a line **Plan review:** the reviewer used with its model and effort, the passes run, and the findings fixed, re-asked or dropped, or "not run".
 - **How we'll know it worked:** the outside checks (test, measurement, outcome, review).
 - **Decisions:** a table with #, Decision, Choice and Why (reason or trade-off accepted), followed by any accepted defaults.
 - **Needs from you:** *needed early* items (with the milestone that needs each) and *can wait until the end* items (with the placeholder used until then).
