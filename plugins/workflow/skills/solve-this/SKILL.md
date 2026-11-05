@@ -45,7 +45,7 @@ Don't claim success without evidence.
 
 ## 5. Report and stop
 
-Run /build-this's step 5 (Finish) now: its review, then archiving the plan (move the proof file with it, to `plans/archive/`), then its one report, plus:
+Run /build-this's step 5 (Finish) now: its reviews; when they changed files, re-run every success check and refresh `proof-<short-topic>.md` (a failed check goes back through step 3's repair loop and step 4's proof, without a second review); then archiving the plan (move the proof file with it, to `plans/archive/`), then its one report, plus:
 - **Proof:** a verdict of **Solved**, **Partly solved** or **Not solved**, with the check table. A check that couldn't be run, or only passed by assumption, counts as unproven and is listed as such.
 - **Assumptions I made for you:** the autopilot defaults, and whether use-available-skills was missing (so no skills were looked up).
 

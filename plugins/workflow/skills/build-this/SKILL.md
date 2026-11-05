@@ -142,6 +142,13 @@ Always include **"Write a handoff file"** as one of the check-in options (alongs
 
 **Review the diff once.** If you recorded a base commit and the **review-changes** skill is available, invoke it (in Claude Code, call the Skill tool with `review-changes`), passing the base commit as the fixed point and the plan file or ticket folder as the Spec. Fix the clear Spec misses (a requirement missing or implemented wrong) and re-run the affected checks. Put Standards findings and other judgement calls in the report without acting on them. One pass: don't review again after fixing. If review-changes isn't available, skip this and say so in the report.
 
+**Then offer a cross-model review.** If you recorded a base commit and the **review-this** skill is available, ask with the question tool, once review-changes' results are in front of the user: *"Should a model from the other provider grill this build with review-this, round after round until it approves?"* Put the recommended option first, labelled "(Recommended)": running it when the other provider's CLI is on PATH (`codex` from Claude, `claude` from Codex; check with `command -v`), skipping it otherwise, since review-this then falls back to a sub-agent of the same model.
+
+- **Run review-this:** Pro: a second model catches what this one is blind to, and its fixes land before the report. Con: several minutes per round, and the other provider's quota.
+- **Skip it:** Pro: the report comes now. Con: only review-changes' single pass has checked the build.
+
+Under solve-this's autopilot, don't ask: run it when the other provider's CLI is on PATH, else skip it. To run it, invoke review-this (in Claude Code, call the Skill tool with `review-this`), passing the base commit and the plan file or ticket folder as the intent; called by a skill, it asks nothing. When the loop changed files, re-run the plan's success checks before archiving; one that now fails counts as failing.
+
 **Archive the plan file first, without asking.** If the plan lives as a file in the project and every milestone is done with its check passing, move it to `plans/archive/` (create the folder if missing) so finished plans stay out of the project root and `plans/`. Move, never delete, so it stays recoverable. If anything is blocked or failing, leave the plan where it is, since it's still the working document. Skip this for plans that only existed in the conversation or were attached from outside the project. Mention the new path in the report.
 
 Give one report, short and scannable:
@@ -149,6 +156,7 @@ Give one report, short and scannable:
 - **What was built**, and where to find it.
 - **Each success check** from the plan, with its result.
 - **Review:** what review-changes found, what you fixed, and the judgement calls left for the user (or "skipped" and why).
+- **Cross-model review:** rounds, verdict, and what changed, from review-this's report (or "skipped" and why).
 - **Skills used**, per milestone, each with its reason line (Need / Provides / Without it) and what it changed (or "no visible effect"), any skill skipped at build time with why, or "none"; plus the plan's "Skills used while planning" line if it has one, and a note if the helper was not found.
 - **Decisions and deviations** you made on the user's behalf, each with a one-line reason.
 - **Blocked or failing**, if anything, and what would unblock it, including human tickets skipped and claims lost to another worker.

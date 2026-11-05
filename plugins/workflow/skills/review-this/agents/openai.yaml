@@ -1,0 +1,3 @@
+interface:
+  display_name: "Review This"
+  short_description: "Cross-model review loop until approved"
