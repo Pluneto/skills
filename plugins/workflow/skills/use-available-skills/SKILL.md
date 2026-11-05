@@ -34,7 +34,7 @@ The default is **no skill**. A skill is used only if you can write a reason for 
 Filters for the shortlist, and rules for the rest:
 
 - In a planning phase, only skills about planning, design decisions or review can be shortlisted. Skills that build or produce files wait for the build phase.
-- Leave out plan-this, build-this, solve-this, research-this, interview, review-changes and this skill itself, so skills never route in circles (build-this already ends with review-changes). Leave out skills whose main job is to interview or question the user, since the callers already handle questions, and skills whose frontmatter says `disable-model-invocation: true` (they are for the user to start). Leave out skills for a file format the deliverable does not use.
+- Leave out plan-this, build-this, solve-this, research-this, interview, review-changes, review-this and this skill itself, so skills never route in circles (build-this already ends with review-changes and offers review-this). Leave out skills whose main job is to interview or question the user, since the callers already handle questions, and skills whose frontmatter says `disable-model-invocation: true` (they are for the user to start). Leave out skills for a file format the deliverable does not use.
 - Skip any skill already loaded in this session, except in record-only mode (see step 3), where a skill loaded earlier still counts so that a saved plan stays complete.
 - Use at most 3 per phase or milestone. That is a ceiling, not a target: one good reason beats three weak ones, and none is a normal result.
 - Run once per phase: don't start a second run for a phase or milestone on your own, but do run again whenever a caller asks, even for a small task.
