@@ -62,7 +62,7 @@ Every claim ends with a `released:` comment, so a reopened issue is free again.
 
 Read by dispatch and by its worker prompts. A blank field uses the fallback in brackets.
 
-- **Max workers**: 3
+- **Max workers**: 5
 - **Land command**: [blank: push the branch, open the PR with `Fixes #<n>`, watch CI, merge per the repo owner's rule]
 - **Land status command**: [blank: `gh pr checks <pr>`, re-run every few minutes until no check is pending; "no checks reported" means the repo has no CI, so treat it as green]
 - **Areas map**: `docs/agents/areas.md` [missing: dispatch infers areas from the issues and `git log --name-only`]

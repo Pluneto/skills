@@ -1,6 +1,6 @@
 {
   "name": "setup",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Set up or repair the pluneto-skills plugins in a repo (/setup:setup-pluneto-skills). Install once at user scope.",
   "author": {
     "name": "Pluneto"
