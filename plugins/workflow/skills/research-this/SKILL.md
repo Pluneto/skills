@@ -19,7 +19,7 @@ Don't ask anyone anything: callers are often agents with nobody to answer, and a
 
 ## 1. Frame and fence
 
-Write down for yourself the **need** in one sentence, the **constraints**, the **decision** the answer feeds, and what counts as **solved**. The decision is the fence: research only what could change the verdict or answers a fact the caller asked for. Setup, tutorials, history and neighbouring problems are out of scope; list anything tempting under Gaps as "not researched" instead of chasing it.
+Write down for yourself the **need** in one sentence, the **constraints**, the **decision** the answer feeds, and what counts as **solved**. The decision is the fence: research only what could change the verdict or answers a fact the caller asked for. Setup, tutorials, history and neighbouring problems are out of scope unless asked; list anything tempting under Gaps as "not researched" instead of chasing it.
 
 List 2-4 search phrasings from different angles (the problem in plain words, the solution category's usual name, "alternatives to <known tool>", the error people would search).
 

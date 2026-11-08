@@ -16,9 +16,9 @@ Break a plan, spec or conversation into **tickets**: tracer-bullet vertical slic
 
 Work from the conversation. If the user passes a reference (a `plan-*.md` path, a spec path, an issue number or URL), fetch and read all of it, with comments. A plan from plan-this is agreed: its decisions are settled, and its milestones, done-when checks and Needs from you are the starting material for the slices.
 
-Read the tracker, so step 4 can find tickets that already cover the work:
+Read the tracker, so step 3 can find tickets that already cover the work:
 
-- **GitHub**: every open issue (`gh issue list --state open --limit 1000 --json number,title,labels,assignees,body`) plus issues closed in the last 30 days (`--state closed --search "closed:>=<date 30 days ago>"`). Keep the first ~300 characters of each body. When 1000 come back the list is cut off: in step 4 also run 2-3 `gh search issues "<phrasing>" --state open` per draft.
+- **GitHub**: every open issue (`gh issue list --state open --limit 1000 --json number,title,labels,assignees,body`) plus issues closed in the last 30 days (`--state closed --search "closed:>=<date 30 days ago>"`). Keep the first ~300 characters of each body. When 1000 come back the list is cut off: in step 3 also run 2-3 `gh search issues "<phrasing>" --state open` per draft.
 - **Local**: every ticket file under `plans/*/tickets/`, whatever its `Status:`.
 
 Optionally explore the codebase to learn its current state: use the project's glossary vocabulary in titles, respect ADRs in the area, and look for prefactoring that makes the change easy ("make the change easy, then make the easy change").
