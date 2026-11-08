@@ -6,7 +6,7 @@ An agent-skills marketplace: plan-then-build workflows, engineering practice, sk
 
 | Plugin | Skills | Install |
 |---|---|---|
-| `workflow` | plan-this, interview, build-this, solve-this, research-this, use-available-skills, wayfinder, to-tickets, dispatch, to-questionnaire, wizard, handoff, which-skill | per project |
+| `workflow` | plan-this, interview, build-this, solve-this, research-this, review-this, t3-orchestration, use-available-skills, wayfinder, to-tickets, dispatch, to-questionnaire, wizard, handoff, which-skill | per project |
 | `engineering` | tdd, diagnosing-bugs, review-changes, pr, prototype, codebase-design, improve-codebase-architecture, domain-modeling | per project |
 | `skill-tools` | writing-for-agents, skill-updater, skill-ozempic, reflect | per project |
 | `design` | product-context, design-review, ui-craft | per project |
