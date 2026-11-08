@@ -15,23 +15,23 @@ Confirm **plan-this**, **interview**, **build-this** and **research-this** are a
 ## 1. Plan
 
 Run /plan-this with these changes:
-- Run it in **autopilot**, and pass autopilot on to every skill it invokes (interview, and any skill a later step calls): answer every question yourself, take the recommended option and record it as an *autopilot default*. Research facts instead of guessing, using plan-this's research-this calls at the depth plan-this sets, without adding runs of your own (take its verdict as the recommended option, and note its Gaps as assumptions); use a marked placeholder for anything only the user knows.
+- Run it in **autopilot**, and pass autopilot on to every skill it invokes (interview, and any skill a later step calls): answer every question yourself, take the recommended option and record it as an *autopilot default*. Research facts instead of guessing, using the research-this runs plan-this and interview make (one per interview round, at the depth they set), without adding runs of your own (take its verdict as the recommended option, and note its Gaps as assumptions); use a marked placeholder for anything only the user knows.
 - Let plan-this's skills step run as written: it asks nothing, so it needs no change. The skills it picks end up in the plan.
-- Let plan-this's Independent review run: in autopilot it runs without asking, fixes what it can, and answers re-opened decisions with the recommended option.
+- Let plan-this's Independent review (review-this on the draft plan) run: in autopilot it runs without asking, fixes what it can, and answers re-opened decisions with the recommended option.
 - Skip all approval, confirmation and next-step questions. Save the plan file and go straight to building.
 - Ask a question only once, up front, and only if the goal has two readings that lead to completely different work. Otherwise state your reading in one line.
 - Every milestone needs a **done when** check that runs without a human, and the plan needs at least one check from outside the conversation (test, measurement, validator, standard). Those checks are the proof in step 4.
 
 ## 2. Build
 
-Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model and sub-agent questions and up-front collection (use placeholders; secrets by variable name only); with 3 or more milestones or tickets it builds each in a sub-agent and picks their models itself. Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
+Run /build-this on the plan file, choosing **build straight through** yourself and skipping its model and sub-agent questions and up-front collection (use placeholders; secrets by variable name only); with 3 or more milestones or tickets it builds each in a child (a T3 child when available) and picks their models itself. Run it through its step 4 (Build) only: its step 5 (Finish) runs once, in this skill's step 5, after the proof. Tick milestones off in the plan file as their checks pass. /build-this loads each milestone's skills itself; don't add steps for that.
 
 ## 3. Keep going until solved
 
 When a check fails or a step blocks:
 1. Read the actual error or output before changing anything. Re-running unchanged isn't a new attempt. For a failing check whose cause isn't obvious, invoke the **diagnosing-bugs** skill if available (in Claude Code, call the Skill tool with `diagnosing-bugs`), in autopilot.
 2. After two failures of one approach, switch to a genuinely different one.
-3. Call something blocked only after three different approaches have failed; continue with independent milestones and revisit it once at the end.
+3. Call something blocked only after three different approaches have failed; continue with independent milestones and revisit it once at the end. A milestone that build-this holds because review-this did not approve it is the exception: it leaves unapproved edits in the shared checkout, so stop and report it.
 4. If the plan itself is wrong, amend the plan file and log it; don't restart.
 
 Stop when every check passes, only user-only or hard-stop items remain (as defined in /build-this), or no untried approach is left.
@@ -45,7 +45,7 @@ Don't claim success without evidence.
 
 ## 5. Report and stop
 
-Run /build-this's step 5 (Finish) now: its reviews; when they changed files, re-run every success check and refresh `proof-<short-topic>.md` (a failed check goes back through step 3's repair loop and step 4's proof, without a second review); then archiving the plan (move the proof file with it, to `plans/archive/`), then its one report, plus:
+Run /build-this's step 5 (Finish) now: its reviews; when they changed files, re-run every success check and refresh `proof-<short-topic>.md` (a failed check goes back through step 3's repair loop and step 4's proof, without repeating the reviews, except that build-this's review-this pass still covers edits made after a milestone's approval before they are committed); then archiving the plan (move the proof file with it, to `plans/archive/`), then its one report, plus:
 - **Proof:** a verdict of **Solved**, **Partly solved** or **Not solved**, with the check table. A check that couldn't be run, or only passed by assumption, counts as unproven and is listed as such.
 - **Assumptions I made for you:** the autopilot defaults, and whether use-available-skills was missing (so no skills were looked up).
 
