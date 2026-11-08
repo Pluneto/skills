@@ -1,0 +1,16 @@
+{
+  "enabledPlugins": {
+    "skill-tools@pluneto-skills": true,
+    "workflow@pluneto-skills": true,
+    "engineering@pluneto-skills": true,
+    "design@pluneto-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "pluneto-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Pluneto/skills"
+      }
+    }
+  }
+}
