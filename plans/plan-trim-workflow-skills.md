@@ -112,3 +112,5 @@ Skills: none fit.
 
 ### Build log
 - M1 Baseline, budgets and t3-orchestration (main agent, built here): check pass - skill file exists (427 words), orchestrator_capabilities present, build-marketplace --check ok; deviations: none; owed: none; skills: writing-for-agents: no visible effect beyond keeping the description to one trigger sentence
+- M2 Trim the big four (main agent, built here): check partial - keep-list greps pass, no plan-review hits, no-tracker-doc copies identical; words: build-this 3714 to 2481 (-33%), plan-this 2594 to 2095 (-19%), wayfinder 2245 to 1666 (-26%), dispatch 2217 to 1717 (-23%), worker-prompt 1504 to 1458, milestone-brief 868 to 764, tickets 444 to 385, no-tracker-doc 376 to 336 (x3); deviations: plan-this, wayfinder and dispatch miss the 33% / budget target because the remaining text is behaviour and commands (kept per the plan's risk rule); owed: the shortfall is made up in M3 or reported; skills: writing-for-agents: no visible effect beyond the rules guiding the cuts
+
