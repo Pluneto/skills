@@ -44,6 +44,7 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 - **`/to-questionnaire`**: when the blocker is in **someone else's** head, it writes them a questionnaire aimed at the gap. What comes back feeds `/plan-this`.
 - **wizard**: for steps only a human can take (provisioning, credentials, CI secrets, a third-party dashboard): an interactive bash script that walks through them. The agent reaches for it when it hits such a wall.
 - **`/handoff`**: a portable Markdown file to continue in another harness, directory or with a colleague.
+- **t3-orchestration**: the T3 Code rules for sub-agents, `delegate_task`, `t3_thread_launch` and waiting. build-this, dispatch, research-this, review-this and solve-this load it themselves.
 - **use-available-skills**: decides, on evidence, which other skills are worth loading for a task. plan-this and build-this run it themselves.
 
 ## Writing skills (skill-tools)

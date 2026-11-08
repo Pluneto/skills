@@ -1,0 +1,3 @@
+interface:
+  display_name: "T3 Orchestration"
+  short_description: "Rules for T3 delegate_task, threads and waiting"
