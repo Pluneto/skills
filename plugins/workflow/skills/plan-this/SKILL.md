@@ -1,14 +1,14 @@
 ---
 name: "plan-this"
 description: Turn any goal into a deep, agreed implementation plan. First deepens the goal the way a top professional in that field would, then interviews the user in rounds over a tree of design decisions until nothing is left assumed, then confirms the plan and hands off to /build-this or saves a Markdown plan. Planning only, it never builds. Use whenever the user says "plan this", "/plan-this", "help me plan", "make a plan for", or asks for an implementation plan for any kind of goal. If the user describes a large, multi-step or high-stakes goal without asking for a plan, do not start the interview; offer this skill in one line instead.
-compatibility: Requires the research-this and interview skills. The use-available-skills skill is optional.
+compatibility: Requires the research-this and interview skills. The use-available-skills and review-this skills are optional.
 ---
 
 # Plan this
 
 Turn a goal into a plan that is **deeper, not bigger**, researched before anything is decided, and agreed to by the user decision by decision.
 
-This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration to find facts is fine, and the only files written are the saved plan and the Independent review's temp files.
+This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration to find facts is fine, and the only files written are the saved plan and temp files for the plan review and research facts.
 
 ## 0. Check requirements first
 
@@ -29,7 +29,7 @@ Then work out four things:
 
 Rewrite the goal as a short paragraph that asks for exactly that, keeping every restriction the user set. Deepening never overrides a stated constraint. If a constraint blocks the professional approach, that becomes a trade-off question in the interview rather than something you quietly decide.
 
-**Keep it short: about 200 words in total.** One line per point, then the rewritten goal. The user has to read and approve this before any question, so a wall of text here slows everything down. Offer more detail if they want it; don't front-load it.
+**Keep it short: about 300 words in total.** One line per point, then the rewritten goal. The user has to read and approve this before any question, so a wall of text here slows everything down. Offer more detail if they want it; don't front-load it.
 
 **Commit or mark as open.** Everything the rewritten goal states is settled once the user approves it, so it must not come back as a question in round 1. If something is genuinely undecided (which race, which scope), don't half-pick it ("most likely X"); mark it plainly as open, e.g. *"(race: open, first question)"*, and ask it in round 1.
 
@@ -53,7 +53,7 @@ Invoke the **interview** skill (in Claude Code, call the Skill tool with `interv
 - **Settled decisions:** any the user already made, including those from a wayfinder map (see Input from a map).
 - **Autopilot**, when solve-this is running this skill.
 - **These plan-specific rules:**
-  - **Choosing among existing options.** When a decision means picking an existing tool, product, provider or approach (which payment provider, which library), offer the options and recommendation from the first research run when it already covers them; only if it doesn't, run research-this at quick depth on that one choice before asking. Plain facts (a price, a date, what a tool supports) stay ordinary lookups.
+  - **Choosing among existing options.** When a decision means picking an existing tool, product, provider or approach (which payment provider, which library), offer the options and recommendation from the first research run when it already covers them; interview's per-round research covers the rest. Plain facts (a price, a date, what a tool supports) stay ordinary lookups.
   - **Design questions.** Each Open question from the design pass is a node in the tree: put it on the frontier once its prerequisites are settled, with its recommended option and pros and cons as the design skill wrote them.
   - **Plan code simply.** If the plan involves code, plan it to follow **KISS**, and **SOLID** for object-oriented code; KISS wins when they conflict. These are standing constraints, so spend no question on them; record them once under **Constraints** in the plan.
   - **Needs from you.** Keep a running list of what only the user can supply (accounts, keys, real content, sign-offs, physical-world actions) for the plan's **Needs from you** section, tagged *needed early* or *can wait*.
@@ -64,17 +64,21 @@ Use the decisions it hands back for step 3.
 
 When the goal comes from a wayfinder map (`plans/<effort>/map.md` or its issue), the map's settled decisions are fixed: deepen and interview only the gaps the map leaves open, and cite the map in the plan's Goal section.
 
+### Milestones
+
+A **milestone** is a deliverable the user could check or demo on its own, holding as many checkbox steps as it takes. Fold steps that serve one deliverable into one milestone, and a simple goal is exactly one milestone. Add another only when the work needs its own Done when check, a different set of skills, or must wait for an earlier deliverable. 
+
 ### Independent review
 
-Once the interview is done and the milestones are known, ask on its own, with the question tool: *"Should another model review the plan before you confirm it?"* (Recommended: yes. Pro: a reader who wasn't in this conversation catches gaps and false facts. Con: a few minutes, and the other provider's usage.) In autopilot, run it without asking.
+Once the interview is done and the milestones are known, ask on its own, with the question tool: *"Should another model review the plan before you confirm it?"* (Recommended: yes. Pro: a reader who wasn't in this conversation catches gaps and false facts. Con: a few minutes, and the other provider's usage.) In autopilot, run it without asking. When **review-this** isn't available (look in ~/.claude/skills, .claude/skills and plugin skill folders too), skip the review and write "not run (review-this not found)" on the plan's Review line.
 
-If yes, follow [plan-review.md](plan-review.md): the draft plan goes, with the user's original request, to a **reviewer from another provider** (from Claude, Codex; from Codex, Claude) that can read the project but change nothing, or to a fresh sub-agent when that CLI is missing or fails. Verify each finding yourself before acting on it, since reviewers can be wrong; drop a false one with a one-line reason. Then:
+If yes, write the draft plan in the Saving format to `plan.md` in a fresh temp folder (`mktemp -d`) and invoke **review-this** (in Claude Code, call the Skill tool with `review-this`) with that file as an explicit **plan** target and the user's original request as the intent. It edits the temp plan for fixable findings; take that file as the draft from then on. Verify its report before acting on it, then:
 
-- **fixable** (a missing step or check, a wrong path, an inconsistency no user decision touches): fix the plan.
-- **needs decision** (a decision is missing, or rests on a false fact): go back to the interview for the affected branches only; settled decisions stay settled.
-- **Scope creep**, whatever its tag: a finding or fix that adds work the approved goal and its checks don't need (a new feature, option, tool or milestone). Push back: decline it with a one-line reason and leave the plan as it is, because the goal the user approved is the scope and only the user widens it. A gap the goal itself needs is not creep.
+- **Fixed**: the plan already holds the fix.
+- **Needs your decision** (a decision is missing, or rests on a false fact): go back to the interview for the affected branches only; settled decisions stay settled.
+- **Scope creep**, whatever the finding's tag: a fix that adds work the approved goal and its checks don't need (a new feature, option, tool or milestone). Undo it and keep the plan as it was, because the goal the user approved is the scope and only the user widens it. A gap the goal itself needs is not creep.
 
-Review again only when the first pass changed the plan, and stop after 2 passes; leftover findings go under Risks. Step 3's summary lists every finding and how it was handled (fixed, re-asked, declined as scope creep, or dropped as false), plus the reviewer's Out of scope ideas in one line.
+Run review-this a second time only when a re-interview changed the plan, and no more than twice in all; items still open go under Risks. Step 3's summary lists the report's Fixed, Disagreed, Declined and Needs-your-decision lines in one or two lines each.
 
 ## 3. Confirm shared understanding
 
@@ -92,9 +96,9 @@ If they choose to build (with or without saving first), invoke the **build-this*
 
 Write `plan-<short-topic>.md` (e.g. `plan-bakery-website.md`) and make it self-contained so a fresh Claude with no other context can act on it; save it in the project's `plans/` folder (create it if missing), never the project root, so plans don't clutter it and /build-this has a place to archive them when done; if there is no project, send it as a file. Start with a title and the line *"Created <date> with /plan-this. Attach this file to a Claude chat and run /build-this (or say "build this plan") to continue."* Then these sections, in order:
 
-- **Goal:** the original request in the user's words, the approved deepened goal, and **Constraints** (everything the user restricted or required; for plans that involve code also "Code follows KISS, and SOLID for object-oriented code"), plus a line **Skills used while planning:** the skills loaded in step 2, each with its reason line, or "none" (with any near-miss notes the helper returned), or "not checked (helper not found)". Then a line **Plan review:** the reviewer used with its model and effort, the passes run, and the findings fixed, re-asked or dropped, or "not run".
+- **Goal:** the original request in the user's words, the approved deepened goal, and **Constraints** (everything the user restricted or required; for plans that involve code also "Code follows KISS, and SOLID for object-oriented code"), plus a line **Skills used while planning:** the skills loaded in step 2, each with its reason line, or "none" (with any near-miss notes the helper returned), or "not checked (helper not found)". Then a line **Plan review:** review-this's **Review** line (reviewer, model, effort, rounds, verdict) with the findings fixed, re-asked or declined, or "not run".
 - **How we'll know it worked:** the outside checks (test, measurement, outcome, review).
 - **Decisions:** a table with #, Decision, Choice and Why (reason or trade-off accepted), followed by any accepted defaults.
 - **Needs from you:** *needed early* items (with the milestone that needs each) and *can wait until the end* items (with the placeholder used until then).
-- **Steps:** milestones, each with checkbox steps, a **Done when** check and a **Skills:** line giving each build-phase skill for that milestone (exact name, plus the path for one that exists only on disk) followed by its reason line (Need / Provides / Without it), or "none fit", or "not checked" when the helper was unavailable.
+- **Steps:** outcome-sized milestones (see Milestones), each with checkbox steps, a **Done when** check and a **Skills:** line giving each build-phase skill for that milestone (exact name, plus the path for one that exists only on disk) followed by its reason line (Need / Provides / Without it), or "none fit", or "not checked" when the helper was unavailable.
 - **Risks and assumptions:** each risk with its mitigation, plus any assumption still to confirm in the real world.

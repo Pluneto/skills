@@ -14,7 +14,7 @@ Adapted from sol-loop in [t3dotgg/tstack](https://github.com/t3dotgg/tstack) (MI
 - **The target**: a diff, a plan, or an implementation (a diff plus the plan or ticket it carries out).
 - **Optional**: a base commit, the intent, a reviewer model or effort (it replaces the defaults in `reviewer.md`).
 
-**Called by a skill** (build-this passes the base commit it recorded and the plan path) **or under autopilot**: the target is the implementation of that plan, the base is the one passed, and the scope is the plan's paths changed since that base. Ask nothing: at every choice take the recommended option and list it under **Assumed** in the report. Otherwise, ask the user only where this skill says so.
+**Called by a skill** (build-this passes the base commit it recorded and the plan path) **or under autopilot**: the target is the implementation of that plan (unless the caller passes a plan as the thing to review, as plan-this does: then it is a plan review), the base is the one passed, and the scope is the plan's paths changed since that base. Ask nothing: at every choice take the recommended option and list it under **Assumed** in the report. Otherwise, ask the user only where this skill says so.
 
 ## Budget and ledger
 
