@@ -1,7 +1,7 @@
 {
   "name": "workflow",
-  "version": "1.5.0",
-  "description": "Plan, build, solve and research goals end to end: plan-this, interview, build-this, solve-this, research-this, review-this, use-available-skills, wayfinder, to-tickets, dispatch, plus handoff, to-questionnaire, wizard and the which-skill router.",
+  "version": "1.6.0",
+  "description": "Plan, build, solve and research goals end to end: plan-this, interview, build-this, solve-this, research-this, review-this, t3-orchestration, use-available-skills, wayfinder, to-tickets, dispatch, plus handoff, to-questionnaire, wizard and the which-skill router.",
   "author": {
     "name": "Pluneto"
   },
@@ -17,6 +17,7 @@
     "./skills/research-this",
     "./skills/review-this",
     "./skills/solve-this",
+    "./skills/t3-orchestration",
     "./skills/to-questionnaire",
     "./skills/to-tickets",
     "./skills/use-available-skills",
