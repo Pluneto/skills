@@ -1,6 +1,6 @@
 # Briefs
 
-The text review-this sends its reviewer. Fill the `<...>` fields, drop lines marked for another target, and send the block as it is. Each brief carries the severity rules and reply format, which you also use to re-grade findings.
+What review-this sends its reviewer. Fill the `<...>` fields, drop lines for another target, send the block as is. Each brief carries the severity rules and reply format, which you also use to re-grade findings.
 
 ## Round 1: code or implementation
 
@@ -30,8 +30,6 @@ APPROVE means no blocker or should remains.
 ```
 
 ## Round 1: plan
-
-Adapted from plan-this's plan review to this reply format.
 
 ```
 Review only. Read any project file to check the plan's claims, and run read-only commands as you need. Change nothing: write no files, make no commits, pushes or PR comments, and start no sub-agents or other reviewers.
