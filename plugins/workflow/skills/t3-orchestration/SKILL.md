@@ -27,6 +27,7 @@ The rules for T3 Code's orchestration tools. T3 MCP tools are deferred: load a t
 - To wait on a thread, call `t3_thread_wait` with a bounded timeout. When it times out with a `next`, end your turn; without one, call it again.
 - Read a finished child with `task_status` (`result_available`). A turn that ended with live child work is not done.
 - Stop a run you replace or no longer need with `task_cancel`, not `t3_thread_interrupt`.
+- CI waits, checks and red repairs: build-this's [fix-ladder.md](../build-this/fix-ladder.md).
 
 ## Reviews and retries
 
