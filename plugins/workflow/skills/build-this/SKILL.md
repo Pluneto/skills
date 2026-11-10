@@ -80,14 +80,12 @@ Follow **KISS**, and **SOLID** for object-oriented code, even if the plan is sil
   - A skill that can't be loaded: skip it and note it in the report. "None fit" means load nothing.
   - No Skills line, or "not checked": run **use-available-skills** once at the start for all milestones in record-only mode and load each milestone's matches as it begins. If that skill can't be found (also look in ~/.claude/skills, .claude/skills and plugin folders), carry on and say so in the report.
   - Never ask the user about skills, and a loaded skill never questions the user: take its recommended option, log it, keep going. The plan wins over a skill's advice.
-- Build it, then **run its done-when check**. A failing check gets a fix and a re-run; still red after a few honest attempts, it climbs the [fix ladder](fix-ladder.md); exhausted, log a blocker and continue with milestones that don't depend on it.
+- Build it, then **run its done-when check**. A failing check climbs the [fix ladder](fix-ladder.md); exhausted, log a blocker and continue with milestones that don't depend on it.
 - Once it passes, tick the milestone in the plan file (a ticket's Finish step is its tick) and append one line to `## Build log` (format in [milestone-brief.md](milestone-brief.md)): check result, deviations, and what each skill actually changed (a step added, a mistake prevented), or "no visible effect". The log lets a compacted or fresh session carry on.
 
 ### Children mode
 
 When step 2 chose children, you are the **orchestrator**: you hold the plan, decisions and short reports, and a fresh child builds each milestone, so build detail never enters your context. Launch a child for every milestone, however small: the user chose a rule they can predict. For tickets, [tickets.md](tickets.md) says who claims and finishes.
-
-Waiting on CI, running checks and repairing red follow [fix-ladder.md](fix-ladder.md).
 
 **Child kind.** With T3's `delegate_task` available, children are **T3 children**: load **t3-orchestration** and follow it. They run one after another in the shared checkout (`isolation: shared`, role implementation), on your own provider unless the user named another, each committing to the current branch. They load skills and run review-this themselves. Otherwise children are **sub-agents** (the Agent tool in Claude Code), which often can't see skills.
 
