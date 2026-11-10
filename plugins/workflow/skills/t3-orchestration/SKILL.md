@@ -28,6 +28,10 @@ The rules for T3 Code's orchestration tools. T3 MCP tools are deferred: load a t
 - Read a finished child with `task_status` (`result_available`). A turn that ended with live child work is not done.
 - Stop a run you replace or no longer need with `task_cancel`, not `t3_thread_interrupt`.
 
+## Checks, CI and fixes
+
+- Waiting on CI, running predictable checks and repairing red follow build-this's [fix-ladder.md](../build-this/fix-ladder.md): no child waits idle (use `watch_pull_request` for a PR), a light child runs and triages, fixers climb standard then strong.
+
 ## Reviews and retries
 
 - Every new review or re-check is a new `delegate_task` with the brief, the findings and any objections, not a message to a running child.

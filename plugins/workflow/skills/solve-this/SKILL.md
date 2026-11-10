@@ -29,8 +29,8 @@ Run /build-this on the plan file, choosing **build straight through** yourself a
 ## 3. Keep going until solved
 
 When a check fails or a step blocks:
-1. Read the actual error or output before changing anything; re-running unchanged isn't a new attempt. For a failing check with a non-obvious cause, invoke **diagnosing-bugs** if available, in autopilot.
-2. After two failures of one approach, switch to a genuinely different one.
+1. A failing check or red CI run climbs build-this's [fix-ladder.md](../build-this/fix-ladder.md) first (light triage, standard then strong fixer). Name **diagnosing-bugs** in a T3 fixer's brief when the cause is non-obvious. An exhausted ladder counts as three failed approaches: that failure is blocked (rule 3) and not revisited. For other blocks, read the actual error or output before changing anything; re-running unchanged isn't a new attempt.
+2. Outside the ladder, after two failures of one approach, switch to a genuinely different one.
 3. Call something blocked only after three different approaches have failed; continue with independent milestones and revisit it once at the end. The exception is a milestone build-this holds because review-this did not approve it: it leaves unapproved edits in the shared checkout, so stop and report it.
 4. If the plan itself is wrong, amend the plan file and log it; don't restart.
 
