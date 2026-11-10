@@ -80,12 +80,14 @@ Follow **KISS**, and **SOLID** for object-oriented code, even if the plan is sil
   - A skill that can't be loaded: skip it and note it in the report. "None fit" means load nothing.
   - No Skills line, or "not checked": run **use-available-skills** once at the start for all milestones in record-only mode and load each milestone's matches as it begins. If that skill can't be found (also look in ~/.claude/skills, .claude/skills and plugin folders), carry on and say so in the report.
   - Never ask the user about skills, and a loaded skill never questions the user: take its recommended option, log it, keep going. The plan wins over a skill's advice.
-- Build it, then **run its done-when check**. A failing check gets a fix and a re-run; after a few honest attempts, log a blocker and continue with milestones that don't depend on it.
+- Build it, then **run its done-when check**. A failing check gets a fix and a re-run; when it stays red after a few honest attempts, climb the [fix ladder](fix-ladder.md) (standard, then strong fixer); an exhausted ladder is a blocker: log it and continue with milestones that don't depend on it. A long or predictable test suite can go to the ladder's light child instead of filling your context.
 - Once it passes, tick the milestone in the plan file (a ticket's Finish step is its tick) and append one line to `## Build log` (format in [milestone-brief.md](milestone-brief.md)): check result, deviations, and what each skill actually changed (a step added, a mistake prevented), or "no visible effect". The log lets a compacted or fresh session carry on.
 
 ### Children mode
 
 When step 2 chose children, you are the **orchestrator**: you hold the plan, decisions and short reports, and a fresh child builds each milestone, so build detail never enters your context. Launch a child for every milestone, however small: the user chose a rule they can predict. For tickets, [tickets.md](tickets.md) says who claims and finishes.
+
+Waiting on CI, running checks and repairing red follow [fix-ladder.md](fix-ladder.md): waits cost no tokens, a light child runs and triages, fixers climb the ladder.
 
 **Child kind.** With T3's `delegate_task` available, children are **T3 children**: load **t3-orchestration** and follow it. They run one after another in the shared checkout (`isolation: shared`, role implementation), on your own provider unless the user named another, each committing to the current branch. They load skills and run review-this themselves. Otherwise children are **sub-agents** (the Agent tool in Claude Code), which often can't see skills.
 
@@ -95,7 +97,7 @@ For each milestone, in order:
 2. Re-check each skill's **Need**. A T3 child gets skill names; a sub-agent gets each `SKILL.md` path (plugin skills sit under `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/<name>/`, newest version), or key lines pasted when no file exists.
 3. In a git repository, note `git rev-parse HEAD`. Fill the brief in [milestone-brief.md](milestone-brief.md) (T3 child or sub-agent variant) and start the child, following t3-orchestration's waiting rules; a sub-agent runs in the foreground with that model and effort.
 4. **Review before commit.** A T3 child runs **review-this** on its milestone diff (base from step 3, the milestone as intent) and commits locally only on APPROVE; it never pushes. For a sub-agent, you run review-this on its diff, then commit. Without a git repository, skip the review and commit. On a stalemate, budget end or block, nothing is committed: the milestone is **Held**, its unfinished paths go in the Build log, and no further child launches in this checkout until the user resolves it.
-5. Read the report, then **re-run the done-when check yourself** and confirm the commit exists (`git log <base>..HEAD`): the report is a claim, the check is the evidence. A failed check gets one fresh child with the failure output in its brief, one model step up; then it's a blocker.
+5. Read the report, then **re-run the done-when check** through the light child of [fix-ladder.md](fix-ladder.md), and confirm the commit exists (`git log <base>..HEAD`): the report is a claim, the check is the evidence, and its output stays out of your context. A failed check climbs the fix ladder (standard, then strong fixer, between children); an exhausted ladder is a blocker.
 6. Tick the milestone and write its Build log line. Items the report lists under needs from the user or held for go-ahead follow the two modes below.
 
 With no child tool, build each milestone yourself with the same progress record.

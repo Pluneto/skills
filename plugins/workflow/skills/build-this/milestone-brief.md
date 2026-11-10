@@ -2,7 +2,7 @@
 
 ## The brief
 
-In children mode, fill the `<…>` fields per milestone and drop the bracketed lines that don't apply. The child sees nothing of the conversation, so the brief must stand alone. A **T3 child** can run skills: name them. A **sub-agent** often can't: give skills only as file paths, since naming one can trigger it inside the sub-agent and end its run early.
+In children mode, fill the `<…>` fields per milestone and drop the bracketed lines that don't apply. Light children and fixers use their own briefs in [fix-ladder.md](fix-ladder.md). The child sees nothing of the conversation, so the brief must stand alone. A **T3 child** can run skills: name them. A **sub-agent** often can't: give skills only as file paths, since naming one can trigger it inside the sub-agent and end its run early.
 
 ```
 You are building one milestone of an agreed plan. Its decisions are settled: build what it says.
