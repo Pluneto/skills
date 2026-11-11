@@ -27,6 +27,7 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 
 - **Something's broken** → **diagnosing-bugs** (engineering). For the hard ones: it builds a tight feedback loop that goes red on this bug before theorising, then fixes with a regression test. solve-this calls it when a check keeps failing. Afterwards, `/reflect` asks what would have prevented it.
 - **A huge, foggy effort, too big for one session** → **`/wayfinder`** (workflow). It charts a map of decision tickets (interview, research, prototype) and resolves them one at a time. When the map clears it hands off to `/plan-this`, which keeps the map's decisions and plans only the gaps. Save it for efforts you can't hold in one session; a well-scoped feature goes straight to `/plan-this`.
+- **A rough idea, not ready to plan** → say "note this idea": on a GitHub tracker it files a `draft` issue. `/plan-this issues <n…>` later plans drafts (the plan goes on the issue, labelled `planned`) and `/to-tickets <n>` splits it into sub-issue tickets; tickets labelled `priority:high` are worked first, `priority:low` last.
 - **Is there already a tool for this? / what's true about X?** → **research-this** (workflow): a sourced Adopt / Extend / Build verdict, or in facts mode a cited Markdown file from primary sources.
 
 ## Codebase health (engineering)

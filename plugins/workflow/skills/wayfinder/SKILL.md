@@ -18,7 +18,7 @@ Every map and ticket is an issue with a **name**, its title. In everything the h
 
 ## The Map
 
-The map is a single issue on the repo's tracker, labelled with the map label (`wayfinder:map` by default): the canonical artifact. Its tickets are child issues. It is an **index**, not a store: it lists the decisions made and links the tickets that hold their detail; a decision lives only in its ticket, and the map gists and links it.
+The map is a single issue on the repo's tracker, labelled with the map label (`wayfinder:map` by default) and given the task issue type (`--type`, the tracker doc's **Issue types**): the canonical artifact. Its tickets are child issues. It is an **index**, not a store: it lists the decisions made and links the tickets that hold their detail; a decision lives only in its ticket, and the map gists and links it.
 
 **Tracker:** follow `docs/agents/issue-tracker.md` ("Wayfinding operations" says how this repo expresses the map, child tickets, blocking and frontier queries; its Labels table names the map and type labels, defaulting to the names below). With none, read [no-tracker-doc.md](no-tracker-doc.md) before creating anything.
 
@@ -60,11 +60,11 @@ Each ticket is a **child issue** of the map, its body the question, sized to one
 <the decision or investigation this ticket resolves>
 ```
 
-It carries its type label (`wayfinder:<type>` by default): `research`, `prototype`, `interview` or `task`. Besides the claim label, the map and type labels are the only labels a map and its tickets carry.
+It carries its type label (`wayfinder:<type>` by default): `research`, `prototype`, `interview` or `task`, and, like the map, the task issue type, which is not a label. Besides the claim label and an optional high or low priority label, the map and type labels are the only labels a map and its tickets carry.
 
 A session **claims** a ticket **first**, before any work, as the tracker doc's Claim says; an open ticket without a live claim is unclaimed.
 
-Blocking uses the tracker's **native** dependency relationship, which renders the frontier in the tracker's own UI; only a tracker without it falls back to a body convention. A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children.
+Blocking uses the tracker's **native** dependency relationship, which renders the frontier in the tracker's own UI; only a tracker without it falls back to a body convention. A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children, in priority order: high first, then normal (no priority label), then low, map order within each.
 
 The answer is not in the body: record it on resolution. Assets made while resolving a ticket are linked from the issue, not pasted in.
 

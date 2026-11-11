@@ -1,6 +1,7 @@
 ---
 name: "plan-this"
-description: Turn any goal into a deep, agreed implementation plan. First deepens the goal the way a top professional in that field would, then interviews the user in rounds over a tree of design decisions until nothing is left assumed, then confirms the plan and hands off to /build-this or saves a Markdown plan. Planning only, it never builds. Use whenever the user says "plan this", "/plan-this", "help me plan", "make a plan for", or asks for an implementation plan for any kind of goal. If the user describes a large, multi-step or high-stakes goal without asking for a plan, do not start the interview; offer this skill in one line instead.
+description: Turn any goal into a deep, agreed implementation plan. First deepens the goal the way a top professional in that field would, then interviews the user in rounds over a tree of design decisions until nothing is left assumed, then confirms the plan and hands off to /build-this or saves a Markdown plan. Planning only, it never builds. Use whenever the user says "plan this", "/plan-this", "help me plan", "make a plan for", asks for an implementation plan for any kind of goal, or names draft issues to plan ("/plan-this issues 12 14"). If the user describes a large, multi-step or high-stakes goal without asking for a plan, do not start the interview; offer this skill in one line instead.
+argument-hint: "[goal, or issues <n…>]"
 compatibility: Requires the research-this and interview skills. The use-available-skills and review-this skills are optional.
 ---
 
@@ -8,11 +9,19 @@ compatibility: Requires the research-this and interview skills. The use-availabl
 
 Turn a goal into a plan that is **deeper, not bigger**, researched before anything is decided, and agreed to by the user decision by decision.
 
-This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration is fine; the only files written are the saved plan and temp files for the plan review and research facts.
+This skill only plans: don't act on the goal (write code, create files, book things). Read-only exploration is fine; the only files written are the saved plan and temp files for the plan review and research facts, and the only tracker writes are those in **Input from draft issues**.
 
 ## 0. Check requirements first
 
 Confirm **research-this** and **interview** are available (possibly with a plugin prefix such as `workflow:`). If either is missing, do nothing else: cancel and tell the user which one must be installed before /plan-this can run.
+
+## Input from draft issues
+
+`issues <n…>` (GitHub tracker; labels and commands from `docs/agents/issue-tracker.md`, else the default names `draft` and `planned`) makes those issues the goal:
+
+1. **Read** each issue's body and comments (the doc's **Read an issue**). An issue without the draft label is not a draft: say so and plan it only if the user insists.
+2. **Group by goal.** Drafts sharing a goal get one plan, the lowest number as the parent; unrelated groups are planned one after another, each through steps 1 to 4. Show the grouping above step 1's deepened goal. When a group's drafts differ in priority label or milestone, add a question to step 1's question call: which the parent takes (recommend the highest priority and the parent's own milestone).
+3. **After the plain yes in step 3**, per group: save the plan file (Saving), post it as a comment on the parent (`gh issue comment <parent> --body-file <plan file>`), set the chosen priority label and milestone on the parent, swap the draft label for the planned label, then make each other draft a sub-issue of the parent and close it with the comment `planned in #<parent>` (the doc's **Sub-issue of a parent** and **Close**). In step 4 the plan is already saved; name `/to-tickets <parent>` as the multi-session route.
 
 ## 1. Deepen the goal
 

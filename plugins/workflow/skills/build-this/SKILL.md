@@ -1,6 +1,6 @@
 ---
 name: "build-this"
-description: Carry out an agreed plan from start to finish, milestone by milestone, without re-opening the user's decisions. Use whenever the user says "build this", "/build-this", "build this plan", attaches or points to a plan-*.md file or a tickets folder, or when /plan-this hands off after planning. If there is no plan at all and the goal is big, offer /plan-this in one line first.
+description: Carry out an agreed plan from start to finish, milestone by milestone, without re-opening the user's decisions. Use whenever the user says "build this", "/build-this", "build this plan", attaches or points to a plan-*.md file, a tickets folder, issues or a milestone (`milestone "<name>"`), or when /plan-this hands off after planning. If there is no plan at all and the goal is big, offer /plan-this in one line first.
 ---
 
 # Build this
@@ -13,7 +13,7 @@ Use the first that exists:
 
 1. **The plan agreed earlier in this conversation** (the usual case after /plan-this): goal, decisions, milestones and checks from its confirmed summary.
 2. **A plan file**: the skill's argument, an attachment, or `plans/plan-*.md` / `plan-*.md` in the project. Read all of it.
-3. **Tickets or issues**: a /to-tickets folder (`plans/<feature>/tickets/`), a GitHub issue list, or issues the user names. Each ticket is a milestone and its acceptance criteria are its done-when check. Read [tickets.md](tickets.md) first.
+3. **Tickets or issues**: a /to-tickets folder (`plans/<feature>/tickets/`), a GitHub issue list, issues the user names, or `milestone "<name>"` (its open issues). Each ticket is a milestone and its acceptance criteria are its done-when check. Read [tickets.md](tickets.md) first.
 4. **A plan the user wrote** in a message or document.
 
 No plan: a small, clear request is a one-milestone plan, so build it. A big or ambiguous one: offer /plan-this in one line (*"Lots of open choices. Plan it first with /plan-this, or build with sensible defaults?"*) and follow the answer.

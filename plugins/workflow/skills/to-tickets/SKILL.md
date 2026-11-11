@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: Break a saved plan, a spec, or the current conversation into tracer-bullet tickets, each declaring its blocking edges, as local files under plans/ or issues on the repo's tracker. For work that spans sessions or parallel agents.
+description: Break a saved plan, a planned issue, a spec, or the current conversation into tracer-bullet tickets, each declaring its blocking edges, as local files under plans/ or issues on the repo's tracker. For work that spans sessions or parallel agents.
 disable-model-invocation: true
 ---
 
@@ -14,11 +14,11 @@ Break a plan, spec or conversation into **tickets**: tracer-bullet vertical slic
 
 ### 1. Gather context
 
-Work from the conversation. If the user passes a reference (a `plan-*.md` path, a spec path, an issue number or URL), fetch and read all of it, with comments. A plan from plan-this is agreed: its decisions are settled, and its milestones, done-when checks and Needs from you are the starting material for the slices.
+Work from the conversation. If the user passes a reference (a `plan-*.md` path, a spec path, an issue number or URL), fetch and read all of it, with comments. A plan from plan-this is agreed: its decisions are settled, and its milestones, done-when checks and Needs from you are the starting material for the slices. An issue with the planned label is such a plan: read it from its plan comment (the one holding `Created <date> with /plan-this`). An issue with the draft label is not planned yet: stop and point to `/plan-this issues <n>`.
 
 Read the tracker, so step 3 can find tickets that already cover the work:
 
-- **GitHub**: every open issue (`gh issue list --state open --limit 1000 --json number,title,labels,assignees,body`) plus issues closed in the last 30 days (`--state closed --search "closed:>=<date 30 days ago>"`). Keep the first ~300 characters of each body. When 1000 come back the list is cut off: in step 3 also run 2-3 `gh search issues "<phrasing>" --state open` per draft.
+- **GitHub**: every open issue (`gh issue list --state open --limit 1000 --json number,title,labels,assignees,body`) plus issues closed in the last 30 days (`--state closed --search "closed:>=<date 30 days ago>"`). Keep the first ~300 characters of each body. Leave out issues with the draft or planned label, and any closed issue whose comments say `planned in #<parent>` (step 3 sees those comments when it reads a candidate): they are plans, not work, so never a duplicate, done or append target. When 1000 come back the list is cut off: in step 3 also run 2-3 `gh search issues "<phrasing>" --state open` per draft.
 - **Local**: every ticket file under `plans/*/tickets/`, whatever its `Status:`.
 
 Optionally explore the codebase to learn its current state: use the project's glossary vocabulary in titles, respect ADRs in the area, and look for prefactoring that makes the change easy ("make the change easy, then make the easy change").
@@ -72,9 +72,9 @@ Done when every draft has a class, a target ticket (or "new") and an action.
 
 ### 4. Quiz the user
 
-When the source is an agreed plan file, skip the breakdown questions (not the tracker question): its interview settled the work. Show the breakdown in one message and go on to step 5, except when step 3 found a match: then ask the match question first.
+When the source is an agreed plan file, skip the breakdown questions (not the tracker question): its interview settled the work. Show the breakdown (the list below) in one message and go on to step 5, except when step 3 found a match: then ask the match question first.
 
-Otherwise present the breakdown as a numbered list; for each ticket show **Title**, **Who** (agent or human), **Blocked by**, **What it delivers** (the end-to-end behaviour it makes work) and **Match** (class, existing ticket and action, `overlap #12 → append`, or `new`).
+Otherwise present the breakdown as a numbered list; for each ticket show **Title**, **Who** (agent or human), **Priority** (the source issue's priority label, else normal; the user may change it), **Blocked by**, **What it delivers** (the end-to-end behaviour it makes work) and **Match** (class, existing ticket and action, `overlap #12 → append`, or `new`).
 
 **Match question**, whenever step 3 found a match, also for an agreed plan: one question asking the user to confirm the matched rows, naming any to reject; a rejected match turns that draft back into a new ticket.
 
@@ -97,9 +97,9 @@ On GitHub, save the body (`gh issue view <n> --json body --jq .body`), add the s
 How to publish depends on the tracker; the tickets are the same either way, only the blocking edges' shape changes:
 
 - **Local files**: one file per ticket (never one combined file) at `plans/<feature-slug>/tickets/<NN>-<slug>.md`, numbered from `01` in dependency order (blockers first), using the template below. `Who:` says agent or human; `Blocked by:` lists the numbers it depends on.
-- **GitHub Issues**: one issue per ticket in dependency order (blockers first), so each can reference real issue numbers. Give each the tracker doc's agent or human label and use native blocking (the doc's **Blocking**), falling back to the "Blocked by" section only where unavailable. If the source was an existing issue, make each ticket its sub-issue (the doc's operation).
+- **GitHub Issues**: one issue per ticket in dependency order (blockers first), so each can reference real issue numbers. Give each the tracker doc's agent or human label, its type as the doc's **Issue types** says (`--type`, chosen per ticket), and its priority label from the breakdown, and use native blocking (the doc's **Blocking**), falling back to the "Blocked by" section only where unavailable. If the source was an existing issue, make each ticket its sub-issue (the doc's operation) with the source's milestone (`--milestone`).
 
-Do NOT close or modify any parent issue. A `Related:` line goes at the top of the body, under the title; a local edge or `Related:` line to a ticket in another folder names its path.
+Leave any parent issue open and unchanged, except: once a planned source's tickets exist, remove its planned label. A `Related:` line goes at the top of the body, under the title; a local edge or `Related:` line to a ticket in another folder names its path.
 
 Finish with the published list (number or file, title, agent/human, blocked by), one line per appended or skipped draft naming its existing ticket, the counts (`created N, merged N, skipped N`: merged counts appends, skipped counts duplicates), and the exact line to run next:
 
