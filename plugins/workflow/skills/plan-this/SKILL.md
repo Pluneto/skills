@@ -21,7 +21,7 @@ Confirm **research-this** and **interview** are available (possibly with a plugi
 
 1. **Read** each issue's body and comments (the doc's **Read an issue**). An issue without the draft label is not a draft: say so and plan it only if the user insists.
 2. **Group by goal.** Drafts sharing a goal get one plan, the lowest number as the parent; unrelated groups are planned one after another, each through steps 1 to 4. Show the grouping above step 1's deepened goal. When a group's drafts differ in priority label or milestone, add a question to step 1's question call: which the parent takes (recommend the highest priority and the parent's own milestone).
-3. **After the plain yes in step 3**, per group: save the plan file (Saving), post it as a comment on the parent (`gh issue comment <parent> --body-file <plan file>`), set the chosen priority label and milestone on the parent, swap the draft label for the planned label, then make each other draft a sub-issue of the parent and close it with the comment `planned in #<parent>` (the doc's **Sub-issue of a parent** and **Close**). In step 4 the plan is already saved; name `/to-tickets <parent>` as the multi-session route.
+3. **After the plain yes in step 3**, per group: save the plan file (Saving), post it as a comment on the parent (`gh issue comment <parent> --body-file <plan file>`), set the chosen priority label and milestone on the parent, swap the draft label for the planned label, then make each other draft a sub-issue of the parent, remove its draft label and close it with the comment `planned in #<parent>` (the doc's **Sub-issue of a parent** and **Close**). In step 4 the plan is already saved; name `/to-tickets <parent>` as the multi-session route.
 
 ## 1. Deepen the goal
 

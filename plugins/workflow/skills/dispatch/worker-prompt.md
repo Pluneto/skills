@@ -1,6 +1,6 @@
 # Worker prompt
 
-Dispatch fills the `<…>` fields and drops the bracketed lines that don't apply, and `--type "<bug type>"` when the tracker doc says `Issue types: no` or has no bug row. The prompt stands alone: a Codex thread reads only this text and the repo, so it names no skill, slash command or `CLAUDE.md`, and spells out every command.
+Dispatch fills the `<…>` fields and drops the bracketed lines that don't apply, and `--type "<bug type>"` when the tracker doc says `Issue types: no` or has no bug row, and `--label "<high label>"` when its Labels table has no high row. The prompt stands alone: a Codex thread reads only this text and the repo, so it names no skill, slash command or `CLAUDE.md`, and spells out every command.
 
 ```text
 You are one of several agents working on <owner/repo> at once. You own one GitHub issue, in your own worktree on branch <branch>. Make every engineering call yourself and note it for the PR's "Choices made". Stop for the user only on a user-level decision (step 5) or a red main (step 11).
