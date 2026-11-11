@@ -18,7 +18,7 @@ Every map and ticket is an issue with a **name**, its title. In everything the h
 
 ## The Map
 
-The map is a single issue on the repo's tracker, labelled with the map label (`wayfinder:map` by default): the canonical artifact. Its tickets are child issues. It is an **index**, not a store: it lists the decisions made and links the tickets that hold their detail; a decision lives only in its ticket, and the map gists and links it.
+The map is a single issue on the repo's tracker, labelled with the map label (`wayfinder:map` by default) and given the task issue type (`--type`, the tracker doc's **Issue types**): the canonical artifact. Its tickets are child issues. It is an **index**, not a store: it lists the decisions made and links the tickets that hold their detail; a decision lives only in its ticket, and the map gists and links it.
 
 **Tracker:** follow `docs/agents/issue-tracker.md` ("Wayfinding operations" says how this repo expresses the map, child tickets, blocking and frontier queries; its Labels table names the map and type labels, defaulting to the names below). With none, read [no-tracker-doc.md](no-tracker-doc.md) before creating anything.
 
@@ -60,11 +60,11 @@ Each ticket is a **child issue** of the map, its body the question, sized to one
 <the decision or investigation this ticket resolves>
 ```
 
-It carries its type label (`wayfinder:<type>` by default): `research`, `prototype`, `interview` or `task`. Besides the claim label, the map and type labels are the only labels a map and its tickets carry.
+It carries its type label (`wayfinder:<type>` by default): `research`, `prototype`, `interview` or `task`, and, like the map, the task issue type, which is not a label. Besides the claim label and an optional high or low priority label, the map and type labels are the only labels a map and its tickets carry.
 
 A session **claims** a ticket **first**, before any work, as the tracker doc's Claim says; an open ticket without a live claim is unclaimed.
 
-Blocking uses the tracker's **native** dependency relationship, which renders the frontier in the tracker's own UI; only a tracker without it falls back to a body convention. A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children.
+Blocking uses the tracker's **native** dependency relationship, which renders the frontier in the tracker's own UI; only a tracker without it falls back to a body convention. A ticket is **unblocked** when every blocker is closed; the **frontier** is the open, unblocked, unclaimed children, in priority order: high first, then normal (no priority label), then low, map order within each.
 
 The answer is not in the body: record it on resolution. Assets made while resolving a ticket are linked from the issue, not pasted in.
 
@@ -100,7 +100,7 @@ The user invokes with a loose idea.
 1. **Name the destination.** Invoke `interview`, then `domain-modeling` if available, to pin down the spec, decision or change. The destination fixes the scope, so it is settled first.
 2. **Map the frontier.** Interview again, **breadth-first**: fan out across the whole space, surfacing open decisions and first steps takeable now. If this surfaces no fog (the way is clear, the journey fits one session), skip the map: stop and ask the user how to proceed.
 3. **Create the map** (with the map label): Destination and Notes filled, Decisions-so-far empty, the fog sketched into **Not yet specified**.
-4. **Create the tickets you can specify now** as child issues, then wire blocking edges and cross-references in a **second pass** with real ids (issues need ids first; a placeholder `#<n>` auto-links an unrelated issue). Anything you can't yet specify stays in the fog.
+4. **Create the tickets you can specify now** as child issues (each with its type label and `--type` task), then wire blocking edges and cross-references in a **second pass** with real ids (issues need ids first; a placeholder `#<n>` auto-links an unrelated issue). Anything you can't yet specify stays in the fog.
 5. **Resolve the research tickets.** Claim each `research` ticket just created and start one sub-agent per ticket in parallel. Sub-agents often can't see skills, so give each a self-contained brief with research-this's facts-mode rules as plain text: the ticket's question; primary sources only (official docs, source code, specs); each claim with its source URL and fetch date; a Gaps section; findings returned as Markdown text, no files written, no git commands (they share your working tree). Record each result as it returns: locally in `plans/<effort>/research/<name>.md` linked from the ticket, on a remote tracker as the resolution comment. Then resolve the ticket as in Work through the map, step 4. Done when every research ticket is closed with its findings recorded.
 6. Stop: charting is one session's work and, beyond research tickets, resolves nothing.
 

@@ -17,13 +17,34 @@ Skills name a **role**; apply the label in the "Label in this repo" column.
 | human | `ready-for-human` | `ready-for-human` | Needs the user: a console step, a decision, a physical action (to-tickets, build-this, dispatch) |
 | claim | `in-progress` | `in-progress` | A worker holds this ticket (Claim, Release, dispatch's stale-claim list) |
 | decision | `needs-decision` | `needs-decision` | A worker parked this ticket on a question only the user can answer (dispatch's worker prompts and `status`) |
+| draft | `draft` | `draft` | A rough note or idea, not yet planned. No agent builds, claims, tickets or dispatches it (plan-this, to-tickets, build-this, dispatch) |
+| planned | `planned` | `planned` | plan-this planned it; it waits for `/to-tickets` or build-this (plan-this, to-tickets, build-this) |
+| high | `priority:high` | `priority:high` | Address immediately: worked first, listed first (to-tickets, build-this, dispatch, wayfinder) |
+| low | `priority:low` | `priority:low` | Do whenever: worked last. No priority label means normal (to-tickets, build-this, dispatch, wayfinder) |
 
 Every ticket from to-tickets carries exactly one of the agent and human labels.
+
+## Issue types
+
+Issue types: yes
+
+Skills name a **role**; set the type in the "Type in this repo" column. With `Issue types: no`, or a role missing from the table, skip the type.
+
+| Role | Default type | Type in this repo |
+|---|---|---|
+| bug | `Bug` | `Bug` |
+| feature | `Feature` | `Feature` |
+| task | `Task` | `Task` |
+
+Which type an issue gets: a to-tickets ticket, per ticket: bug when it fixes wrong behaviour, feature when it adds behaviour, else task. Wayfinder maps and tickets and dispatch's Batch issue: task. `Main is red`: bug, plus the high label.
 
 ## Conventions
 
 - **Target repo**: before the first `gh issue create` of a session, run `gh repo view --json nameWithOwner`. In a fork, `gh` can default to the upstream parent; when the name is not the user's repo, confirm with the user before creating anything.
 - **Create an issue**: `gh issue create --title "..." --body "..." --label "<label>"`, with a heredoc for multi-line bodies.
+- **Type**: add `--type "<type>"` to `gh issue create` only when `Issue types: yes` and the role is in the table; `gh issue edit <n> --type` changes it. `gh issue list --type` filters.
+- **Milestone**: milestones are the user's (releases, time boxes). Keep any milestone on an issue you edit; a ticket inherits its source issue's (`--milestone "<name>"`). build-this and dispatch accept `milestone "<name>"` as the ticket set (`gh issue list --milestone "<name>"`).
+- **Priority**: high first, then normal (no label), then low last, within blocker order. Tickets inherit the source issue's priority label. Only `Main is red` gets the high label from an agent; the user sets the rest.
 - **Read an issue**: `gh issue view <n> --json number,title,body,labels,comments`.
 - **List issues**: `gh issue list --state open --json number,title,labels` with `--label` and `--state` filters.
 - **Sub-issue of a parent**: `gh issue create --parent <parent> ...`, or `gh issue edit <parent> --add-sub-issue <child>` (gh 2.94+). Without sub-issues, put `Part of #<parent>` at the top of the child body.
@@ -32,6 +53,12 @@ Every ticket from to-tickets carries exactly one of the agent and human labels.
 - **Comment**: `gh issue comment <n> --body "..."`.
 - **Labels**: `gh issue edit <n> --add-label "..."` / `--remove-label "..."`.
 - **Close**: `gh issue comment <n> --body "..."`, then `gh issue close <n>` (on an already-closed issue, `gh issue close --comment` drops the comment and still exits 0).
+
+## Drafts
+
+When the user says "note this idea" (or "jot this down"): file an issue with the draft label, a type (task unless it is plainly a bug or a feature), and any priority they name. Nothing more.
+
+Flow: `draft` → `/plan-this issues <n…>` → `planned` → `/to-tickets <n>` → tickets as sub-issues of `<n>`. Agents never build, claim, ticket or dispatch a `draft` issue; point to `/plan-this issues <n>` instead.
 
 ## Claim
 
@@ -76,7 +103,7 @@ Read by dispatch and by its worker prompts. A blank field uses the fallback in b
 
 ## When a skill says "publish to the issue tracker"
 
-Create a GitHub issue. A to-tickets ticket gets the agent or human label; a wayfinder ticket gets the label of its type instead.
+Create a GitHub issue. A to-tickets ticket gets the agent or human label; a wayfinder ticket gets the label of its type instead. Both get a type as in **Issue types**.
 
 ## When a skill says "fetch the relevant ticket"
 
@@ -88,6 +115,6 @@ Used by `/wayfinder`. The map is one issue with child issues as tickets.
 
 - **Map**: an issue with the map label (`gh issue create --label "<map label>"`).
 - **Child ticket**: a sub-issue of the map, with the label of its type (research, prototype, interview, task).
-- **Frontier**: the map's open children with no open blocker (see **Count open blockers**, or every issue in the `Blocked by` line is closed) and no live claim (the winner command prints an empty line); first in map order wins.
+- **Frontier**: the map's open children with no open blocker (see **Count open blockers**, or every issue in the `Blocked by` line is closed) and no live claim (the winner command prints an empty line); high first, then normal, then low, map order within each.
 - **Claim**: as in **Claim**, the session's first write; then `gh issue edit <n> --add-assignee @me` so the issue shows who drives it.
 - **Resolve**: `gh issue comment <n> --body "<answer>"`, `gh issue close <n>`, `gh issue comment <n> --body "released: resolved"`, then append a context pointer (gist + link) to the map's Decisions so far.

@@ -12,7 +12,7 @@ An agent-skills marketplace: plan-then-build workflows, engineering practice, sk
 | `design` | product-context, design-review, ui-craft | per project |
 | `setup` | setup-pluneto-skills (`/setup:setup-pluneto-skills`, user-invoked only) | user scope, once per machine |
 
-Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` (which ends with review-changes) → `/reflect`; `/to-tickets` splits a plan for multi-session work, and `/dispatch` runs those tickets as waves of parallel workers.
+Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` (which ends with review-changes) → `/reflect`; `/to-tickets` splits a plan for multi-session work, and `/dispatch` runs those tickets as waves of parallel workers. On a GitHub tracker, "note this idea" files a `draft` issue, `/plan-this issues <n>` plans it (`planned`) and `/to-tickets <n>` makes its tickets, worked `priority:high` first and `priority:low` last.
 
 ## Install
 
