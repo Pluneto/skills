@@ -74,13 +74,13 @@ Accepted defaults: the "always merge" fixer rule applies to dispatch only (build
 
 ### M2 Dispatch watches main during every wave
 
-- [ ] `dispatch/SKILL.md` steps 1 and 5: resolve Main health per decision 9 (blank or old `[blank:` default → main-health.md; custom kept) and fill `<main health command>` with the result.
-- [ ] `dispatch/SKILL.md` step 8: after launching any wave (single or in a chain), stay in the turn: `t3_thread_wait` on the wave's threads with a ~10-minute timeout, run Main health after each return (this loop overrides t3-orchestration's end-the-turn rule, as the chain already says), and tick closed lines. A single wave ends the loop when the wave settles as decision 2 defines it, then reports and waits for the next reply as today.
-- [ ] Move "Red main in a chain" to apply to every launch: on `red <url>` (or an open `Main is red` issue), follow fix-ladder's Red main, launching the fixer thread as today; its go-ahead is decision 1 (always, unless the repo owner's rule is stricter: then report the green fix PR and keep watching). Resume and wake waiting workers exactly as the chain does now.
-- [ ] `build-this/fix-ladder.md` Red main step 4: add "a dispatch orchestrator's fixer" to the go-aheads, subject to the owner's rule; nothing else changes for build-this.
-- [ ] `dispatch/worker-prompt.md`: fill `<main health command>` for every worker (also with a land command, for the post-merge check if useful) only if needed; keep the prompt's own red-main report unchanged.
-- [ ] Keep step 8 no longer than needed: cut chain text that now duplicates the shared loop.
-- [ ] `scripts/build-marketplace`, `scripts/validate`.
+- [x] `dispatch/SKILL.md` steps 1 and 5: resolve Main health per decision 9 (blank or old `[blank:` default → main-health.md; custom kept) and fill `<main health command>` with the result.
+- [x] `dispatch/SKILL.md` step 8: after launching any wave (single or in a chain), stay in the turn: `t3_thread_wait` on the wave's threads with a ~10-minute timeout, run Main health after each return (this loop overrides t3-orchestration's end-the-turn rule, as the chain already says), and tick closed lines. A single wave ends the loop when the wave settles as decision 2 defines it, then reports and waits for the next reply as today.
+- [x] Move "Red main in a chain" to apply to every launch: on `red <url>` (or an open `Main is red` issue), follow fix-ladder's Red main, launching the fixer thread as today; its go-ahead is decision 1 (always, unless the repo owner's rule is stricter: then report the green fix PR and keep watching). Resume and wake waiting workers exactly as the chain does now.
+- [x] `build-this/fix-ladder.md` Red main step 4: add "a dispatch orchestrator's fixer" to the go-aheads, subject to the owner's rule; nothing else changes for build-this.
+- [x] `dispatch/worker-prompt.md`: fill `<main health command>` for every worker (also with a land command, for the post-merge check if useful) only if needed; keep the prompt's own red-main report unchanged.
+- [x] Keep step 8 no longer than needed: cut chain text that now duplicates the shared loop.
+- [x] `scripts/build-marketplace`, `scripts/validate`.
 
 **Done when:** a walk-through of the last-worker case (the final worker merges, its ticket closes, its main run then goes red) shows the loop still running and starting Red main; an old tracker doc holding the `[blank: ...gh run list...]` default resolves to main-health.md; step 8 reads as above for both `launch wave <N>` and chains, fix-ladder step 4 names the dispatch go-ahead, `scripts/validate` and `scripts/build-marketplace --check` pass, and review-this (other provider) approves the diff.
 
@@ -99,3 +99,4 @@ Accepted defaults: the "always merge" fixer rule applies to dispatch only (build
 ## Build log
 
 - M1 Main health checks the head commit (here): check pass - test-main-health 13/13 (old command fails 6, incl. no-run-yet and mixed-state), validate ok, live: splitscan-v2 `pending` (CI in progress), zephyr-homelab `green` via the no-run fallback, both match gh run list; deviations: command uses gh's own `--jq` with `$ENV` (no separate jq dependency for workers), the test stub uses jq 1.7 while gh uses gojq, so the live run is the gojq check; owed: none; skills: tdd: old command run first as the red step, proving the race before the rewrite
+- M2 Dispatch watches main during every wave (here): check pass - validate ok, build-marketplace --check ok, last-worker walk-through keeps the loop running into Red main, old `[blank:` doc default resolves to main-health.md; review-this (Codex gpt-6.1-sol, high) approved in 2 rounds over M1+M2 (S1 fixed: owner-gated fix PR keeps the watch running instead of stalling, resume also on the issue closing via the merged fix); deviations: worker-prompt.md unchanged (workers already get `<main health command>`, now resolved in step 5); a stall also ends a single wave's watch; owed: none; skills: writing-for-agents: one shared Watch loop for single waves and chains instead of a second copy, chain text cut (dispatch SKILL.md 2030 to 2204 words)
