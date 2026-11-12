@@ -54,7 +54,7 @@ def push(sha, age):
 OLD_GREEN = run("old", "ci", "completed", "success", 900)
 OLD_RED = run("old", "ci", "completed", "failure", 900, "https://run/old-red")
 
-# (name, head sha, activity (None: API fails), runs newest first, expected output)
+# (name, head sha, activity (None: API fails), runs newest first, expected output[, commit date age])
 CASES = [
     ("head green", "new", push("new", 600),
      [run("new", "ci", "completed", "success", 590), OLD_GREEN], "green"),
@@ -63,7 +63,7 @@ CASES = [
     ("head pushed just now, no run yet", "new", push("new", 10), [OLD_GREEN], "pending"),
     ("head without runs, pushed long ago, older green", "new", push("new", 600), [OLD_GREEN], "green"),
     ("head without runs, pushed long ago, older red", "new", push("new", 600), [OLD_RED], "red https://run/old-red"),
-    ("old-dated commit pushed just now", "new", push("new", 10), [OLD_GREEN], "pending"),
+    ("old-dated commit pushed just now", "new", push("new", 10), [OLD_GREEN], "pending", 86400),
     ("activity API unavailable, head has no run", "new", None, [OLD_GREEN], "pending"),
     ("activity still shows previous push", "new", push("old", 900), [OLD_GREEN], "pending"),
     ("cancelled, superseded by newer success", "new", push("new", 600),
@@ -96,10 +96,11 @@ def main(markdown=DEFAULT):
         bin_dir.mkdir()
         (bin_dir / "gh").write_text(STUB)
         (bin_dir / "gh").chmod(0o755)
-        for number, (name, head, activity, runs, expected) in enumerate(CASES):
+        for number, (name, head, activity, runs, expected, *commit_age) in enumerate(CASES):
             fixture = Path(tmp, str(number))
             fixture.mkdir()
-            (fixture / "commit.json").write_text(json.dumps({"sha": head}))
+            date = ago(commit_age[0] if commit_age else 600)
+            (fixture / "commit.json").write_text(json.dumps({"sha": head, "commit": {"committer": {"date": date}}}))
             if activity is not None:
                 (fixture / "activity.json").write_text(json.dumps(activity))
             (fixture / "runs.json").write_text(json.dumps(runs))
