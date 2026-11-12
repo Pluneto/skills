@@ -9,6 +9,7 @@ then the repo's own checks:
 - every skill copied from mattpocock/skills keeps its LICENSE
 - every skill is named in the which-skill router (as a whole word)
 - the generated marketplace files are current (scripts/build-marketplace --check)
+- dispatch's Main health command passes its fixtures (scripts/test-main-health)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
 """
@@ -118,6 +119,9 @@ def repo_problems():
                            capture_output=True, text=True)
     if build.returncode != 0:
         found.append(build.stderr.strip())
+    health = subprocess.run([sys.executable, str(ROOT / "scripts" / "test-main-health")], capture_output=True, text=True)
+    if health.returncode != 0:
+        found.append((health.stderr + health.stdout).strip())
     for group in PAIRED:
         texts = {rel: (ROOT / rel).read_bytes() if (ROOT / rel).is_file() else None for rel in group}
         if None in texts.values() or len(set(texts.values())) > 1:
