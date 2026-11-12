@@ -1,0 +1,17 @@
+{
+  "description": "A sub-agent never runs above the session that starts it (model or effort); Fable sub-agents are refused.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/agent_cap.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

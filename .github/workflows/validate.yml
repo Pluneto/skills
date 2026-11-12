@@ -1,0 +1,19 @@
+name: validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # validate compares plugin versions with origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: python3 -m pip install pyyaml
+      - run: python3 scripts/validate
