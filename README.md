@@ -83,7 +83,8 @@ After cloning, enable the hook: `git config core.hooksPath scripts/hooks` (needs
 ## Scripts
 
 - `scripts/build-marketplace`: regenerates the marketplace file and each plugin.json's `skills` list, and checks skill frontmatter (valid YAML, `name` matches the folder, `description` present) and that there are no symlinks. It writes nothing when a check fails; `--check` writes nothing and fails when a generated file is out of date.
-- `scripts/validate`: `claude plugin validate --strict` on the marketplace and every plugin, plus the repo's checks: versions bumped (untracked files count as changes), `agents/openai.yaml` matching each skill's invocation, licences kept on vendored skills, every skill named in which-skill as a whole word, generated files current (`build-marketplace --check`), and the files copied into several skills still identical (`PAIRED` in the script).
+- `scripts/validate`: `claude plugin validate --strict` on the marketplace and every plugin, plus the repo's checks: versions bumped (untracked files count as changes), `agents/openai.yaml` matching each skill's invocation, licences kept on vendored skills, every skill named in which-skill as a whole word, generated files current (`build-marketplace --check`), the files copied into several skills still identical (`PAIRED` in the script), and dispatch's Main health command passing its fixtures (`scripts/test-main-health`, needs bash and jq).
+- `scripts/test-main-health [file]`: runs the command in `dispatch/main-health.md` (or `file`'s first `sh` block) against fixture `gh` output for each red, pending and green case.
 - `scripts/bump`: bumps a plugin's version.
 - `scripts/measure-context`: estimates always-on skill tokens outside any project (see `docs/baseline.md`); `scripts/measure-skills <plugin-dir>...` does the same for plugin folders.
 
