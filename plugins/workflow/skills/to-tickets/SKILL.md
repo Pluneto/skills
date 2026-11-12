@@ -29,9 +29,10 @@ Break the work into **tracer bullet** tickets.
 
 <vertical-slice-rules>
 
-- Each slice cuts a narrow but COMPLETE path through every layer (schema, API, UI, tests): vertical, NOT a horizontal slice of one layer
+- Each slice cuts a COMPLETE path through every layer (schema, API, UI, tests): vertical, NOT a horizontal slice of one layer
 - A completed slice is demoable or verifiable on its own
-- Each slice fits in a single fresh context window
+- Each slice is one deliverable a single agent finishes in one session while it hands cheap work (searches, test runs, mechanical edits, a well-specified sub-feature) to sub-agents: slices sharing files or an area (one module, skill or feature folder, not a whole package) merge into one ticket
+- Keep slices apart only for a real blocking edge, a different Who (agent or human), a hotspot both would edit (a file many tickets change, such as a shared registry or lockfile), so no one long ticket holds it, or work that would outgrow one such session; each part stays vertical
 - Any prefactoring comes first
 
 </vertical-slice-rules>
