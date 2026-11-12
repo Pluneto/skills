@@ -99,7 +99,7 @@ Read by dispatch and by its worker prompts. A blank field uses the fallback in b
 - **Review command, Claude reviewer** (reviews Codex workers): [blank: as above]. On T3 with the pools: `cd <dir> && CLAUDE_CONFIG_DIR=~/.claude-pool claude -p --model <model> --effort <effort> --tools "" --no-session-persistence < input.md > review.md`
 - **Main health command**: prints `green`, `pending` or `red <run url>` for the default branch's head commit; workers without a Land command check it before merging, and dispatch's orchestrator watches main with it. [blank: dispatch's main-health.md]
 - **Decision owner**: [blank: the repo owner's login]. The GitHub login a parked worker mentions (`@<login>`) so the person who makes product calls gets the notification; set it when a machine account owns the repo.
-- **Model database**: [blank: Model tiers for every ticket]. A command that prints the table of task type, rank, provider, model, effort and evidence that dispatch picks workers from, for example `gh api repos/<owner>/<repo>/contents/models.md --jq .content | base64 -d`.
+- **Model database**: [blank: the shared table in `PlunetoD/t3-retro`, read with `gh api repos/PlunetoD/t3-retro/contents/models.md --jq .content | base64 -d`]. A command that prints the table of task type, rank, provider, model, effort and evidence that dispatch picks workers from; set it only for a repo with its own table, or to `none` for Model tiers on every ticket.
 
 ## When a skill says "publish to the issue tracker"
 
