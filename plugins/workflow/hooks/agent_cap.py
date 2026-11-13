@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """PreToolUse hook on the Agent tool: a sub-agent never runs above the session that starts it.
 
-Denies an Agent call when the sub-agent's effective model ranks above the parent's (haiku < sonnet < opus),
-when its effective effort ranks above the parent's, or when the model is Fable (excluded from dispatch).
+Denies an Agent call when the sub-agent's effective model ranks above the parent's (haiku < sonnet < opus < fable),
+or when its effective effort ranks above the parent's.
 The parent's model is the newest `api-request` record's `params.model` or assistant `message.model` in the
 transcript (hook input has no model field; the assistant message holding the Agent call isn't written yet);
 its effort is the input's `effort`. When the parent's model can't be read, the call is allowed with a
@@ -16,17 +16,15 @@ import re
 import sys
 from pathlib import Path
 
-TIERS = ("haiku", "sonnet", "opus")
+TIERS = ("haiku", "sonnet", "opus", "fable")
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 TAIL = 4 << 20  # read at most the transcript's last 4 MiB
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---", re.S)
 
 
 def tier(model):
-    """haiku/sonnet/opus (alias or full id) -> 0/1/2; fable -> 'fable'; anything else -> None."""
+    """haiku/sonnet/opus/fable (alias or full id) -> 0/1/2/3; anything else -> None."""
     m = (model or "").lower()
-    if "fable" in m:
-        return "fable"
     return next((i for i, t in enumerate(TIERS) if t in m), None)
 
 
@@ -116,8 +114,6 @@ def verdict(data):
     parent = parent_model(data.get("transcript_path"))
     definition = agent_definition(tool_input.get("subagent_type"), data.get("cwd"))
     model = child_model(tool_input, definition, parent)
-    if tier(model) == "fable":
-        return f"Sub-agent model {model} is excluded (Fable is never used). Pick haiku, sonnet or opus."
     if parent is None:
         print("agent_cap: parent model unknown (transcript unreadable); sub-agent allowed unchecked", file=sys.stderr)
         return None

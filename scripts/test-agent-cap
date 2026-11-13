@@ -71,8 +71,10 @@ class AgentCap(unittest.TestCase):
         self.assertIsNone(self.run_hook("claude-sonnet-5-5", model="sonnet"))
         self.assertIn("never runs above", self.run_hook("claude-sonnet-5-5", model="opus"))
 
-    def test_fable_is_always_denied(self):
-        self.assertIn("excluded", self.run_hook("claude-opus-5-5", model="fable"))
+    def test_fable_ranks_above_opus(self):
+        self.assertIn("never runs above", self.run_hook("claude-opus-5-5", model="fable"))
+        self.assertIsNone(self.run_hook("claude-fable-5-2", model="fable"))
+        self.assertIsNone(self.run_hook("claude-fable-5-2", model="opus"))
 
     def test_omitted_model_inherits_and_is_allowed(self):
         self.assertIsNone(self.run_hook("claude-haiku-5-5"))
