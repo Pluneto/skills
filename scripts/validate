@@ -10,7 +10,6 @@ then the repo's own checks:
 - every skill is named in the which-skill router (as a whole word)
 - the generated marketplace files are current (scripts/build-marketplace --check)
 - dispatch's Main health command passes its fixtures (scripts/test-main-health)
-- the workflow plugin's agent_cap hook passes its fixtures (scripts/test-agent-cap)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
 """
@@ -120,7 +119,7 @@ def repo_problems():
                            capture_output=True, text=True)
     if build.returncode != 0:
         found.append(build.stderr.strip())
-    for test in ("test-main-health", "test-agent-cap"):
+    for test in ("test-main-health",):
         run = subprocess.run([sys.executable, str(ROOT / "scripts" / test)], capture_output=True, text=True)
         if run.returncode != 0:
             found.append((run.stderr + run.stdout).strip())

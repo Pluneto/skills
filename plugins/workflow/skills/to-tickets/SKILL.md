@@ -105,7 +105,7 @@ Leave any parent issue open and unchanged, except: once a planned source's ticke
 Finish with the published list (number or file, title, agent/human, blocked by), one line per appended or skipped draft naming its existing ticket, the counts (`created N, merged N, skipped N`: merged counts appends, skipped counts duplicates), and the exact line to run next:
 
 - `/build-this <tickets folder>` or `/build-this issues <first>-<last>` (bare numbers: T3's composer turns a typed `#<n>` into a pull-request chip): one session works them in blocker order, skipping human tickets.
-- On GitHub, when two or more agent tickets can run at once, also offer `/dispatch`, which groups them into waves of parallel workers.
+- On GitHub, when two or more agent tickets can run at once, also offer `/dispatch`, which takes ownership of them and finishes them with parallel workers.
 
 <local-ticket-template>
 
