@@ -16,7 +16,7 @@ Skills name a **role**; apply the label in the "Label in this repo" column.
 | agent | `ready-for-agent` | `ready-for-agent` | Fully specified; an agent can build it unattended (to-tickets, build-this, dispatch) |
 | human | `ready-for-human` | `ready-for-human` | Needs the user: a console step, a decision, a physical action (to-tickets, build-this, dispatch) |
 | claim | `in-progress` | `in-progress` | A worker holds this ticket (Claim, Release, dispatch's stale-claim list) |
-| decision | `needs-decision` | `needs-decision` | A worker parked this ticket on a question only the user can answer (dispatch's worker prompts and `status`) |
+| decision | `needs-decision` | `needs-decision` | A worker parked this ticket on a question only the user can answer (dispatch's workers) |
 | draft | `draft` | `draft` | A rough note or idea, not yet planned. No agent builds, claims, tickets or dispatches it (plan-this, to-tickets, build-this, dispatch) |
 | planned | `planned` | `planned` | plan-this planned it; it waits for `/to-tickets` or build-this (plan-this, to-tickets, build-this) |
 | high | `priority:high` | `priority:high` | Address immediately: worked first, listed first (to-tickets, build-this, dispatch, wayfinder) |
@@ -87,19 +87,18 @@ Every claim ends with a `released:` comment, so a reopened issue is free again.
 
 ## Parallel work
 
-Read by dispatch and by its worker prompts. A blank field uses the fallback in brackets.
+Read by dispatch and by the workers it briefs. A blank field uses the fallback in brackets.
 
 - **Max workers**: 5
 - **Land command**: [blank: push the branch, open the PR with `Fixes #<n>`, watch CI, merge per the repo owner's rule]
 - **Land status command**: [blank: `gh pr checks <pr>`, re-run every few minutes until no check is pending; "no checks reported" means the repo has no CI, so treat it as green]
 - **Areas map**: `docs/agents/areas.md` [missing: dispatch infers areas from the issues and `git log --name-only`]
-- **Model tiers**: [blank: each provider's default model; dispatch still suggests the effort]. One line per T3 provider, its `light / standard / strong` models by their T3 model ids, for example `Codex (pool): <light> / <standard> / <strong>`. List only models the subscription behind that provider serves; one model may fill several tiers.
+- **Model tiers**: [blank: each provider's default model]. Used by build-this's fix ladder; dispatch picks models freely. One line per T3 provider, its `light / standard / strong` models by their T3 model ids, for example `Codex (pool): <light> / <standard> / <strong>`. List only models the subscription behind that provider serves; one model may fill several tiers.
 - **Verify command**: [blank: the check commands are the verification]. What a worker runs before opening its PR to prove the change, and the command that reports its result, for example a land script's dry run and its status command.
-- **Review command, Codex reviewer** (reviews Claude workers): [blank: no pre-PR review; the PR says "Review: none configured"]. `<dir>` holds `input.md` (instructions, issue, diff) and gets `review.md`; dispatch fills `<dir>`, `<model>` and `<effort>`. On T3 with the pools: `CODEX_HOME=~/.codex-pool codex exec --ephemeral --skip-git-repo-check -s read-only -C <dir> -m <model> -c 'model_reasoning_effort="<effort>"' -o <dir>/review.md - < <dir>/input.md`
-- **Review command, Claude reviewer** (reviews Codex workers): [blank: as above]. On T3 with the pools: `cd <dir> && CLAUDE_CONFIG_DIR=~/.claude-pool claude -p --model <model> --effort <effort> --tools "" --no-session-persistence < input.md > review.md`
+- **Review command, Codex reviewer** (optional helper): [blank: the worker gets its review from a different model another way, such as a sub-agent or `delegate_task`; every dispatched PR needs a passing review before it merges]. `<dir>` holds `input.md` (instructions, issue, diff) and gets `review.md`; the worker fills `<dir>`, `<model>` and `<effort>`. On T3 with the pools: `CODEX_HOME=~/.codex-pool codex exec --ephemeral --skip-git-repo-check -s read-only -C <dir> -m <model> -c 'model_reasoning_effort="<effort>"' -o <dir>/review.md - < <dir>/input.md`
+- **Review command, Claude reviewer** (optional helper): [blank: as above]. On T3 with the pools: `cd <dir> && CLAUDE_CONFIG_DIR=~/.claude-pool claude -p --model <model> --effort <effort> --tools "" --no-session-persistence < input.md > review.md`
 - **Main health command**: prints `green`, `pending` or `red <run url>` for the default branch's head commit; workers without a Land command check it before merging, and dispatch's orchestrator watches main with it. [blank: dispatch's main-health.md]
 - **Decision owner**: [blank: the repo owner's login]. The GitHub login a parked worker mentions (`@<login>`) so the person who makes product calls gets the notification; set it when a machine account owns the repo.
-- **Model database**: [blank: the shared table in `PlunetoD/t3-retro`, read with `gh api repos/PlunetoD/t3-retro/contents/models.md --jq .content | base64 -d`]. A command that prints the table of task type, rank, provider, model, effort and evidence that dispatch picks workers from; set it only for a repo with its own table, or to `none` for Model tiers on every ticket.
 
 ## When a skill says "publish to the issue tracker"
 

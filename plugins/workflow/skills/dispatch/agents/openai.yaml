@@ -1,5 +1,5 @@
 interface:
   display_name: "Dispatch"
-  short_description: "Plan and launch waves of parallel ticket workers"
+  short_description: "Own a batch of tickets and finish it with parallel workers"
 policy:
   allow_implicit_invocation: false

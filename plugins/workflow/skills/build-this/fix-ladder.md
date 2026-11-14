@@ -49,7 +49,7 @@ Tried: <one line for the next rung>
 
 Then the light child confirms (re-run the check, or triage the new CI run). Green: log the rung.
 
-**Review** the rung's commits (base: HEAD before it) as the repaired work is reviewed, at most 2 rounds: review-this in build-this, the reviewer step in dispatch's worker prompt. Until approved they count as uncommitted edits: nothing is pushed or built on them. A failed rung (not fixed, still red, or rejected) is undone before the next: `git reset --hard <HEAD before it> && git clean -fd`.
+**Review** the rung's commits (base: HEAD before it) as the repaired work is reviewed, at most 2 rounds: review-this in build-this, the review step in a dispatch worker's brief. Until approved they count as uncommitted edits: nothing is pushed or built on them. A failed rung (not fixed, still red, or rejected) is undone before the next: `git reset --hard <HEAD before it> && git clean -fd`.
 
 **Where.** A milestone or PR fixer works in the failure's checkout, never while a builder child runs there.
 
@@ -60,7 +60,7 @@ A red default-branch run gets exactly one fixer; the `Main is red` issue is the 
 1. **Find the canonical issue** by listing (search can miss a new one): `gh api --paginate 'repos/{owner}/{repo}/issues?state=open&per_page=100' --jq '.[] | select(.pull_request == null and (.title | startswith("Main is red"))) | .number' | sort -n | head -1`. None: open `Main is red: <short sha>` with the run URL, `--type "<bug type>"` (the tracker doc's **Issue types**) and `--label "<high label>"` (its Labels table; drop either when the doc lacks it), and list again (the listing lags too, so count your new issue in). The lowest number is canonical; close any other, linking it.
 2. **Claim** it with the tracker doc's Claim (no doc: [no-tracker-doc.md](no-tracker-doc.md)); list again and go on only if it is still the lowest. Lost: comment your run URL there and wait.
 3. **Fix** in a fresh checkout of `origin/<default>` on branch `t3/fix-main-<short sha>-<tier>`: dispatch's worktree strategy (`startFromOrigin: true`); on T3 otherwise `isolation: worktree`, whose child first runs `git fetch origin && git switch -c <branch> origin/<default>`; elsewhere `git worktree add -b <branch> <path> origin/<default>` after `git fetch origin`. The fixer reviews, pushes and opens `Fix main: <short sha>` with `Fixes #<issue>`.
-4. **Land** only with a go-ahead already given: a dispatch launch (any wave, unless the repo owner's rule asks more), a "merge if" in the prompt, or the repo owner's rule. Otherwise report the green PR and stop.
+4. **Land** only with a go-ahead already given: a dispatch run (unless the repo owner's rule asks more), a "merge if" in the prompt, or the repo owner's rule. Otherwise report the green PR and stop.
 5. **Confirm**: the light child triages the run on the merge commit. Green: comment `released: done in #<pr>`. Red: reopen the issue, next rung.
 
 **Every agent that merges** (worker, fixer, build-this landing a ticket) triages the run on its merge commit before reporting done; red starts this section.
