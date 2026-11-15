@@ -32,7 +32,7 @@ A **flow** is a path through the skills. Most work travels the **main flow**; **
 
 ## Codebase health (engineering)
 
-- **`/improve-codebase-architecture`** surveys the codebase for deepening opportunities and interviews you through the one you pick; the result is a goal to take into `/plan-this`.
+- **`/improve-codebase-architecture`** surveys the codebase for deepening opportunities on its own and reports verified, ranked candidates with the top one designed; the result is a goal to take into `/plan-this`.
 - **codebase-design** is the deep-module vocabulary (module, interface, depth, seam, adapter) for designing a module's shape. tdd and improve-codebase-architecture both speak it.
 - **domain-modeling** sharpens the project's domain language: challenge a fuzzy term, keep `GLOSSARY.md` clean, record a hard-to-reverse decision as an ADR.
 

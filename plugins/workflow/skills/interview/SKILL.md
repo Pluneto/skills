@@ -9,7 +9,7 @@ Interview the user relentlessly until every decision is either answered or liste
 
 ## Input from a caller
 
-A calling skill (plan-this, wayfinder, improve-codebase-architecture) may pass:
+A calling skill (plan-this, wayfinder) may pass:
 
 - the **root**: the goal or idea the tree hangs off. Called directly, the root is what the user wants stress-tested.
 - **settled decisions**: fixed. They never come back as questions.
