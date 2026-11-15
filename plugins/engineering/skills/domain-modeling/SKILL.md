@@ -5,70 +5,51 @@ description: Build and sharpen a project's domain model. Use when discussing cod
 
 # Domain Modeling
 
-Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* `GLOSSARY.md` for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
+The domain model is the project's agreed language and its hard-to-reverse decisions. It lives in two places that other skills read: `GLOSSARY.md` for terms and `docs/adr/` for decisions. This skill is for changing the model; reading it needs no skill.
 
-## File structure
+**Done when** every domain term the work relied on has one meaning, the glossary states it, and the code, the glossary and what the user said agree, with any remaining disagreement named in your report.
 
-Most repos have a single context:
+## Sharpening the model
 
+Look for what makes the language unreliable: a term used against its glossary definition, one word covering two concepts, two words for one concept, a stated rule the code contradicts. Probe relationships between concepts with concrete edge-case scenarios, since a boundary only shows where a scenario crosses it.
+
+Settle each one yourself:
+
+- **Facts** (what the code does, what the glossary says, how the term is used across the repo) you look up.
+- **Meaning only the user holds** (which of two concepts they intend, a rule the code doesn't encode): with the user in the conversation, put the conflict to them in one concrete question ("the code cancels whole Orders, you describe partial cancellation: which holds?"). Running unattended, take the reading the code supports, write it down, and list it under Assumptions in your report.
+
+Write each change to the model in the turn it is settled, so the files never lag the conversation.
+
+## GLOSSARY.md
+
+The file layout and entry format are fixed, because other skills find and parse them.
+
+- **Single context** (most repos): one `GLOSSARY.md` at the repo root.
+- **Several contexts**: `GLOSSARY-MAP.md` at the root links each context's own `GLOSSARY.md` (`- [Ordering](./src/ordering/GLOSSARY.md): receives and tracks customer orders`) and, under `## Relationships`, says how contexts relate (`- **Ordering → Fulfillment**: Ordering emits OrderPlaced; Fulfillment starts picking`). Work in the context the topic belongs to.
+- Create a file when there is a first term to put in it.
+
+```md
+# {Context name}
+
+{One or two sentences: what this context is and why it exists.}
+
+## Language
+
+**Order**:
+A customer's request to buy one or more products.
+_Avoid_: Purchase, transaction
 ```
-/
-├── GLOSSARY.md
-├── docs/
-│   └── adr/
-│       ├── 0001-event-sourced-orders.md
-│       └── 0002-postgres-for-write-model.md
-└── src/
-```
 
-If a `GLOSSARY-MAP.md` exists at the root, the repo has multiple contexts. The map points to where each one lives:
+An entry is one canonical term, one or two sentences saying what it *is*, and the rejected synonyms under `_Avoid_`. The glossary holds domain concepts only: general programming concepts and implementation details live elsewhere. Subheadings group terms once clusters appear.
 
-```
-/
-├── GLOSSARY-MAP.md
-├── docs/
-│   └── adr/                          ← system-wide decisions
-├── src/
-│   ├── ordering/
-│   │   ├── GLOSSARY.md
-│   │   └── docs/adr/                 ← context-specific decisions
-│   └── billing/
-│       ├── GLOSSARY.md
-│       └── docs/adr/
-```
+## ADRs
 
-Create files lazily: only when you have something to write. If no `GLOSSARY.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
+An ADR records that a decision was made and why. Write one when all three hold, and skip it when any is missing:
 
-## During the session
+1. **Hard to reverse**: changing course later has a real cost.
+2. **Surprising without context**: a future reader would wonder why it was done this way, or would "fix" it.
+3. **A real trade-off**: there were genuine alternatives and specific reasons for the choice.
 
-### Challenge against the glossary
+Typical cases: technology with lock-in, a deliberate deviation from the obvious path, a constraint the code cannot show, an alternative rejected for a non-obvious reason.
 
-When the user uses a term that conflicts with the existing language in `GLOSSARY.md`, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
-
-### Sharpen fuzzy language
-
-When the user uses vague or overloaded terms, propose a precise canonical term. "You're saying 'account': do you mean the Customer or the User? Those are different things."
-
-### Discuss concrete scenarios
-
-When domain relationships are being discussed, stress-test them with specific scenarios. Invent scenarios that probe edge cases and force the user to be precise about the boundaries between concepts.
-
-### Cross-reference with code
-
-When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
-
-### Update GLOSSARY.md inline
-
-When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
-
-`GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
-
-### Offer ADRs sparingly
-
-Only offer to create an ADR when all three are true:
-
-1. **Hard to reverse**: the cost of changing your mind later is meaningful
-2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
-3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
-
-If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
+Location and numbering are fixed: `docs/adr/NNNN-slug.md`, the next number after the highest present (a context's own decisions go in `<context>/docs/adr/`). The content is a title and one to three sentences of context, decision and reason. Add a `Status` frontmatter (`proposed | accepted | deprecated | superseded by ADR-NNNN`), considered options or consequences only when a reader needs them.

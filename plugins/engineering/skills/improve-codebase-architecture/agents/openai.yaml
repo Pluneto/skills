@@ -1,5 +1,5 @@
 interface:
   display_name: "Improve Codebase Architecture"
-  short_description: "Find architecture improvements and decide them"
+  short_description: "Survey for deepening opportunities, design the best"
 policy:
   allow_implicit_invocation: false
