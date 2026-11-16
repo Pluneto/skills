@@ -1,6 +1,4 @@
-# Child briefs and the Build log
-
-## Briefing a child
+# Briefing a child
 
 A child agent starts with nothing but its brief, so the brief stands alone. Write it in your own words; it is complete when the child could finish without asking you anything. It carries:
 
@@ -12,15 +10,3 @@ A child agent starts with nothing but its brief, so the brief stands alone. Writ
 - **The report you want back**, short enough to read without filling your context (about 150 words, no code): status (done or blocked), the check and its result, files changed, deviations, user-level questions, items held or owed, the commit if any.
 
 Then verify: re-run the check yourself or through a cheap child that changes nothing, and read the diff when the work is subtle.
-
-## The Build log
-
-At the end of the plan file, under `## Build log`, one line per milestone as it finishes or blocks (blocked ones stay unticked). For tickets, [tickets.md](tickets.md) says where it goes.
-
-```
-- M<n> <title> (<who built it>): check pass|fail - <one-line result>; deviations: <…|none>; owed: <needs from the user, parked decisions, held steps, or none>; skills: <skill: what it changed|none>
-```
-
-Changes you make to later milestones after a deviation or an interview are logged the same way, as their own line: `- Plan change after M<n>: <what changed and why>`.
-
-A fresh session reads this log, not the conversation: write what it needs to carry on.

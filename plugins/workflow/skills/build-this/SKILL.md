@@ -29,7 +29,11 @@ Order, pace, tools, skills and delegation are yours to choose, and you start wit
 A milestone is done when its Done-when check passes in a fresh run you made yourself, after the last change. A milestone without a check gets the obvious one, written down before you build.
 
 1. Build it. A failing check or red CI goes through [fix-ladder.md](fix-ladder.md). When the ladder is exhausted the milestone is **blocked**: log it and carry on with the milestones that do not depend on it.
-2. Tick it in the plan and append its line to the plan's `## Build log` (format in [milestone-brief.md](milestone-brief.md#the-build-log)). The log is what a fresh session resumes from, so it carries what the conversation would otherwise hold: what changed, what deviated, what is owed.
+2. Tick it in the plan and append its line to the plan's `## Build log` (for tickets, [tickets.md](tickets.md) says where). A fresh session resumes from this log, not the conversation, so it carries what changed, what deviated and what is owed; a blocked milestone gets its line too and stays unticked, and a change you make to later milestones gets its own line (`- Plan change after M<n>: <what and why>`).
+
+   ```
+   - M<n> <title> (<who built it>): check pass|fail - <one-line result>; deviations: <…|none>; owed: <needs from the user, parked decisions, held steps, or none>; skills: <skill: what it changed|none>
+   ```
 3. Settle the deviations (below) before the next milestone starts.
 
 ## Deviations
