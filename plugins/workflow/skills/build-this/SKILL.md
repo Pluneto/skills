@@ -21,7 +21,7 @@ Order, pace, tools, skills and delegation are yours to choose, and you start wit
 
 - **Needs from the user.** Read the plan's **Needs from you** against the milestones. Ask once, at the start, for everything an early milestone cannot be built without; everything else gets a marked placeholder (`TODO(user)`) and a line in the report. Secrets never pass through chat: name the variable or secret setting each goes in.
 - **Delegation.** Hand a milestone, a search or a check to a child agent when that keeps your context clean or gives the work a better-suited model. When a skill for starting and waiting on child agents in this harness is installed, load it before the first child and follow it. A child sees nothing of this conversation: brief it per [milestone-brief.md](milestone-brief.md). Its report is a claim; the check you re-run is the evidence.
-- **Skills.** A milestone's **Skills** line is a recommendation with its reason: load a skill when its Need still holds for the milestone as it now is. With no Skills lines, run **use-available-skills** once. A loaded skill adds method; the plan's decisions win over its advice.
+- **Skills.** A milestone's **Skills** line is a recommendation with its reason: load a skill when its Need still holds for the milestone as it now is. With no Skills lines, run **use-available-skills** once. A loaded skill adds method; the plan's decisions win over its advice, and open questions it hands back are deviations to sort like any other.
 - **Code** follows KISS, and SOLID for object-oriented code: the simplest thing that passes the check.
 
 ## Each milestone
@@ -45,7 +45,7 @@ Plans meet reality. Sort each surprise:
 
 For a user-level deviation, finish whatever part of the current milestone stands without it, then **before the next milestone starts** run the **interview** skill on the open decisions, giving it what you found, the evidence, the options and your recommendation. Collect several into one interview. When the decision blocks the current milestone itself, interview at once. Afterwards record each answer in the plan's Decisions table, rewrite the remaining milestones and their Done-when checks to fit, and continue.
 
-**Unattended runs** (the caller said there is no user to ask): park the decision instead. Log the question, options and your recommendation as owed, build everything that does not depend on it, leave what does unbuilt, and put it first in the report.
+**Unattended runs** (the caller said there is no user to ask) ask nothing, anywhere in this skill. A user-level decision is parked: log the question, options and your recommendation as owed, build everything that does not depend on it, leave what does unbuilt, and put it first in the report. A missing input gets its placeholder, or blocks the milestone that cannot stand on one. A hard-to-undo step without a go-ahead is listed as held.
 
 ## Hard-to-undo steps
 

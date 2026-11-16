@@ -11,6 +11,8 @@ This skill only plans. Exploring read-only is yours to do freely; the only thing
 
 The plan is agreed when four things have happened, in this order. How you get through each is your call.
 
+**Unattended** (the caller says there is no user to ask): every question and confirmation below is answered with its recommended option and recorded as an *unattended default*, the review runs without asking, and the plan is saved and handed to whoever called. A goal with two readings that lead to completely different work is planned on the likelier one, with the other named first among the plan's assumptions.
+
 ## 1. The goal is deepened, and the user accepted the deeper version
 
 A top professional's version of a task is a sharper target, better starting material, proper methods and an outside check, not more features. Work out:
