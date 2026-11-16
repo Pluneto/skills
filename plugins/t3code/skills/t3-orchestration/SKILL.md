@@ -37,6 +37,17 @@ How T3 Code's orchestration tools behave, so a child is started, waited on and s
 - Mention a thread by its `link`.
 - Question tools break child threads: a child or worker puts a question to the user as plain text.
 
+## Live state on T3
+
+When you own a build, add these lines to build-this's live-state file and rewrite them as each changes (a child started or reported, a PR merged, a preview stopped); you alone write the file, and a child's brief never names it:
+
+```
+Delegates: <task id> <link> - <what it builds>; one line each, or none
+Watched PRs: <url> - <waiting on>; or none
+Previews: <port> - tmux <session>; or none
+Holds: <phone queue or device session, until when>; or none
+```
+
 ## Building a plan's milestones with T3 children
 
 When build-this delegates milestones here:
