@@ -12,7 +12,7 @@ Both axes run as **parallel sub-agents** so they don't pollute each other's cont
 
 Tickets live where `docs/agents/issue-tracker.md` says. Without it, look for local files under `plans/` and for the issues the commits reference.
 
-**Called by a skill** (build-this passes the base SHA it recorded and the plan or ticket path): use what it passed and ask nothing. Under **autopilot**, likewise never ask: fall back to the merge-base with the default branch, skip the Spec axis if no spec is found, and say so in the report.
+**Called by a skill** (build-this passes the base SHA it recorded and the plan or ticket path): use what it passed and ask nothing. In an **unattended** run (the caller says there is no user to ask), likewise never ask: fall back to the merge-base with the default branch, skip the Spec axis if no spec is found, and say so in the report.
 
 ## Process
 

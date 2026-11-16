@@ -1,6 +1,6 @@
 {
   "name": "engineering",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Engineering practice: tdd, diagnosing-bugs, review-changes, pr, prototype, and codebase design and domain modelling (codebase-design, improve-codebase-architecture, domain-modeling). Adapted from mattpocock/skills (MIT).",
   "author": {
     "name": "Pluneto"

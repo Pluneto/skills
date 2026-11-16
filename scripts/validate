@@ -14,6 +14,7 @@ then the repo's own checks:
 - t3code dispatch's Main health command passes its fixtures (scripts/test-main-health)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
+- the workflow plugin names no host (HOST_TERMS): host rules live in a host plugin
 """
 import json
 import re
@@ -42,6 +43,9 @@ PAIRED = [
 ]
 # Design skills return Open questions instead of asking (docs/design-contract.md).
 NO_ASKING = re.compile(r"AskUserQuestion|question tool|ask the user|ask which|ask only", re.I)
+
+# workflow must work on any harness: T3 Code's names belong in plugins/t3code.
+HOST_TERMS = re.compile(r"\bt3\b|t3-|t3code|delegate_task|t3_thread|orchestrator_capabilities", re.I)
 
 
 def problems(report):
@@ -139,6 +143,13 @@ def repo_problems():
             for hit in NO_ASKING.findall(line):
                 found.append(f"{path.relative_to(ROOT)}:{number}: \"{hit}\": design skills return Open questions "
                              "instead of asking (docs/design-contract.md)")
+    for path in sorted((ROOT / "plugins" / "workflow").rglob("*")):
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            for hit in HOST_TERMS.findall(line):
+                found.append(f"{path.relative_to(ROOT)}:{number}: \"{hit}\": workflow names no host; "
+                             "move the rule to plugins/t3code")
     return found
 
 

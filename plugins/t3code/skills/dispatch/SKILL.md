@@ -11,7 +11,7 @@ Take ownership of these issues and solve the problems that don't need the user o
 
 You orchestrate; workers build. Provider, model, effort, sub-agents and how to split the work are your calls, per task, judged from the task alone.
 
-First load **t3-orchestration** and read `docs/agents/issue-tracker.md`. Take from it the labels, the claim, release and winner commands, and from Parallel work: Max workers, Areas map, Land, Verify and Review commands, Main health command, Decision owner. Its Model database and Model tiers fields, and the model table they point to, were written for an earlier version of this skill: ignore them and run no command they name. Older batch issues' numbered prompts are from that version too: write each brief fresh from the list below.
+First load **t3-orchestration** and read `docs/agents/issue-tracker.md`. Take from it the labels, the claim, release and winner commands, and from Parallel work: Max workers, Areas map, Land, Verify and Review commands, Main health command, Decision owner. A doc written for an earlier version of this skill may carry Model database or Model tiers fields and numbered batch prompts: ignore them and write each brief fresh from the list below.
 
 ## Guardrails
 
@@ -22,7 +22,7 @@ Each prevents a collision or a decision made without the user.
 - **User-level decisions** (product behaviour, UI or copy, scope, real data, privacy or security, a new dependency, service or cost) are parked: question, options and recommendation as an issue comment mentioning the Decision owner, the decision label, the same question as plain text in the thread (question tools break T3 threads), then wait. Everything else is an engineering call, noted in the PR.
 - **Real data.** Workers write only to a local stack, never to shared or staging data.
 - **Review, then merge.** Every PR is reviewed by a different model from its author's (the doc's Review command, else a sub-agent or `delegate_task` on another model), then the worker merges it once CI and main are green (a PR that fixes the red main merges on its own green CI). Dispatching is the user's go-ahead: end every brief with the line `merge if green`, which repos' land rules look for.
-- **Red main first.** Only the fix merges onto a red main. Check with the doc's Main health command (blank: [main-health.md](main-health.md)), repair per [fix-ladder.md](fix-ladder.md)'s Red main, then tell waiting workers to land again.
+- **Red main first.** Only the fix merges onto a red main. Check with the doc's Main health command (blank: [main-health.md](main-health.md)), repair per [red-main.md](red-main.md).
 
 ## Run
 

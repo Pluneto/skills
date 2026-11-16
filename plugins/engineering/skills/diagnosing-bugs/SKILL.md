@@ -7,7 +7,7 @@ description: Diagnosis loop for hard bugs and performance regressions. Use when 
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
-**Autopilot** (a caller such as solve-this says so): wherever this skill would ask the user, don't. Take the best available option, log it as an assumption, and keep going. If a loop truly can't be built, report that as the result.
+**Unattended** (the caller says there is no user to ask): wherever this skill would ask the user, don't. Take the best available option, log it as an assumption, and keep going. If a loop truly can't be built, report that as the result.
 
 When exploring the codebase, read `GLOSSARY.md` (if it exists) to get a clear mental model of the relevant modules, and check ADRs in the area you're touching.
 

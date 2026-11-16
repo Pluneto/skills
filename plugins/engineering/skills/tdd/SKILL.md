@@ -23,7 +23,7 @@ A **seam** is the public interface you test at: the interface where you observe 
 
 Ask: "What's the public interface, and which seams should we test?" Give each proposed seam a one-line note on what it catches and what it misses.
 
-**Called by a skill or on autopilot** (build-this, solve-this): ask nothing. Take the seams the plan or ticket names, or pick them by the rule above, write them down as assumptions with their one-line notes, and continue; the caller's report carries them.
+**Called during a build or unattended** (build-this, or a caller with no user to ask): ask nothing. Take the seams the plan or ticket names, or pick them by the rule above, write them down as assumptions with their one-line notes, and continue; the caller's report carries them.
 
 When the shape of that interface is itself in question (how deep the module is, where the seam belongs, what the interface should expose), invoke the `codebase-design` skill (in Claude Code, call the Skill tool with `codebase-design`) for the vocabulary. It is the shared source of the module, interface, depth, seam, adapter, leverage and locality terms, and it is a reference to consult, not a session to run.
 
