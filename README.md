@@ -1,6 +1,6 @@
 # pluneto-skills
 
-An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`): no hooks, MCP servers or binaries.
+An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`), with one exception: `t3code` also ships compaction hooks (a Python 3 script, no dependencies). No MCP servers or binaries.
 
 ## Plugins
 
@@ -14,7 +14,7 @@ An agent-skills marketplace: plan-then-build workflows, engineering practice, sk
 | `experimental` | Skills under test. Listed in the marketplace only while it holds one (currently none); see [plugins/experimental](plugins/experimental/README.md) | when you want to try them |
 | `setup` | setup-pluneto-skills (`/setup:setup-pluneto-skills`, user-invoked only) | user scope, once per machine |
 
-Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` → `/reflect`. build-this owns the build: it chooses its own route, proves each milestone with its check, and interviews you before the next milestone only when a deviation needs a decision that is yours. `/to-tickets` splits a plan for multi-session work, and on T3 Code `/dispatch` (t3code) takes ownership of those tickets and finishes them with parallel workers. Retired skills live in [archive/](archive/README.md), unpublished. On a GitHub tracker, "note this idea" files a `draft` issue, `/plan-this issues <n>` plans it (`planned`) and `/to-tickets <n>` makes its tickets, worked `priority:high` first and `priority:low` last.
+Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` → `/reflect`. build-this owns the build: it chooses its own route, proves each milestone with its check, keeps a live-state file outside the working tree so a context compaction loses nothing it needs, and interviews you before the next milestone only when a deviation needs a decision that is yours. `/to-tickets` splits a plan for multi-session work, and on T3 Code `/dispatch` (t3code) takes ownership of those tickets and finishes them with parallel workers. Retired skills live in [archive/](archive/README.md), unpublished. On a GitHub tracker, "note this idea" files a `draft` issue, `/plan-this issues <n>` plans it (`planned`) and `/to-tickets <n>` makes its tickets, worked `priority:high` first and `priority:low` last.
 
 ## Install
 
@@ -98,6 +98,7 @@ After cloning, enable the hook: `git config core.hooksPath scripts/hooks` (needs
 - `scripts/validate`: `claude plugin validate --strict` on the marketplace and every plugin, plus the repo's checks: versions bumped (untracked files count as changes), `agents/openai.yaml` matching each skill's invocation, licences kept on vendored skills, every skill named in which-skill as a whole word (t3code and experimental excepted), no host names under `plugins/workflow` (`HOST_TERMS` in the script), generated files current (`build-marketplace --check`), the files copied into several skills still identical (`PAIRED` in the script), and dispatch's Main health command passing its fixtures (`scripts/test-main-health`, needs bash and jq).
 - `scripts/test-main-health [file]`: runs the command in t3code's `dispatch/main-health.md` (or `file`'s first `sh` block) against fixture `gh` output for each red, pending and green case.
 - `scripts/bump`: bumps a plugin's version.
+- `plugins/t3code/evals/compaction_replay.py`: replays a long Claude Code session through `/compact`, with and without t3code's hooks and a live-state file, and scores fixed probe questions (run once by hand, not in CI; it spends model tokens). `scan TRANSCRIPT --min-tokens N` lists clean cut points; `run --transcript T --cutoff-line N --repo R --commit C --probes P --out DIR --plugin-dir plugins/t3code --trial baseline --trial ours:STATE_FILE` forks the transcript into a throwaway detached worktree per trial and prints the score table. The probes file, the state file and the output hold a session's content: keep them out of repositories. See the script's docstring for formats.
 - `scripts/measure-context`: estimates always-on skill tokens outside any project (see `docs/baseline.md`); `scripts/measure-skills <plugin-dir>...` does the same for plugin folders.
 
 ## Licence
