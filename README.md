@@ -1,6 +1,6 @@
 # pluneto-skills
 
-An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`): no hooks, MCP servers or binaries.
+An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`), with one exception: `t3code` also ships compaction hooks (a Python 3 script, no dependencies). No MCP servers or binaries.
 
 ## Plugins
 
