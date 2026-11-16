@@ -6,13 +6,15 @@ An agent-skills marketplace: plan-then-build workflows, engineering practice, sk
 
 | Plugin | Skills | Install |
 |---|---|---|
-| `workflow` | plan-this, interview, build-this, solve-this, research-this, review-this, t3-orchestration, use-available-skills, wayfinder, to-tickets, dispatch, to-questionnaire, wizard, handoff, which-skill | per project |
+| `workflow` | plan-this, interview, build-this, research-this, review-this, use-available-skills, wayfinder, to-tickets, to-questionnaire, wizard, handoff, which-skill. Host-neutral: any repo, any harness, code or not | per project |
+| `t3code` | t3-orchestration, dispatch (`/dispatch`). Only for [T3 Code](https://github.com/t3dotgg/t3code); depends on `workflow`, which installs with it | per project or user scope, on T3 Code |
 | `engineering` | tdd, diagnosing-bugs, review-changes, pr, prototype, codebase-design, improve-codebase-architecture, domain-modeling | per project |
 | `skill-tools` | writing-for-agents, skill-updater, skill-ozempic, reflect | per project |
 | `design` | product-context, design-review, ui-craft | per project |
+| `experimental` | Skills under test. Listed in the marketplace only while it holds one (currently none); see [plugins/experimental](plugins/experimental/README.md) | when you want to try them |
 | `setup` | setup-pluneto-skills (`/setup:setup-pluneto-skills`, user-invoked only) | user scope, once per machine |
 
-Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` (which ends with review-changes) → `/reflect`; `/to-tickets` splits a plan for multi-session work, and `/dispatch` takes ownership of those tickets and finishes them with parallel workers. On a GitHub tracker, "note this idea" files a `draft` issue, `/plan-this issues <n>` plans it (`planned`) and `/to-tickets <n>` makes its tickets, worked `priority:high` first and `priority:low` last.
+Not sure which to use? Type `/which-skill`. The main flow is `/plan-this` → `/build-this` → `/reflect`. build-this owns the build: it chooses its own route, proves each milestone with its check, and interviews you before the next milestone only when a deviation needs a decision that is yours. `/to-tickets` splits a plan for multi-session work, and on T3 Code `/dispatch` (t3code) takes ownership of those tickets and finishes them with parallel workers. Retired skills live in [archive/](archive/README.md), unpublished. On a GitHub tracker, "note this idea" files a `draft` issue, `/plan-this issues <n>` plans it (`planned`) and `/to-tickets <n>` makes its tickets, worked `priority:high` first and `priority:low` last.
 
 ## Install
 
@@ -62,6 +64,16 @@ Codex and Copilot read the same `.claude-plugin/` manifests. This repo uses the 
 
 Plugins run with your permissions and skills enter the agent's context, so read what you install.
 
+### Moving to workflow 2.0
+
+`workflow` 2.0.0 is host-neutral, so three skills left it: `dispatch` and `t3-orchestration` moved to the new `t3code` plugin, and `solve-this` was archived (build-this now owns the build without the opening questions). Updating `workflow` removes them, with no notice in the app. On T3 Code:
+
+1. `claude plugin marketplace update pluneto-skills`
+2. `claude plugin install t3code@pluneto-skills` at the scope `workflow` has (it pulls in `workflow`)
+3. in each repo, `/setup:setup-pluneto-skills repair` refreshes the CLAUDE.md block and offers `t3code`.
+
+A tracker doc's **Model tiers** field is no longer read; delete the line.
+
 ### Moving from the old layout
 
 The `ux` plugin was merged into `design`, and mattpocock-skills is now vendored here. In each repo that used them:
@@ -72,7 +84,7 @@ The `ux` plugin was merged into `design`, and mattpocock-skills is now vendored 
 
 ## Edit a skill
 
-1. Edit `plugins/<plugin>/skills/<skill>/SKILL.md` (copy files in; symlinks are rejected). A new skill also needs `agents/openai.yaml` and a line in `which-skill`.
+1. Edit `plugins/<plugin>/skills/<skill>/SKILL.md` (copy files in; symlinks are rejected). A new skill also needs `agents/openai.yaml` and a line in `which-skill` (except in `t3code` and `experimental`, which the host-neutral router leaves out). New skills start in `plugins/experimental`; retired ones move to `archive/`.
 2. Bump the plugin's version: `scripts/bump <plugin>` (patch; pass `minor` or `major` for bigger changes). Installed copies only update when the version changes, and `scripts/validate` fails if a plugin changed since `origin/main` without a bump.
 3. Run `scripts/build-marketplace` (it regenerates `.claude-plugin/marketplace.json` and each plugin's `skills` list), stage everything, then commit to `main` and push. The pre-commit hook refuses unstaged or untracked changes under `.claude-plugin/`, `plugins/` and `scripts/` (so it checks exactly what is committed), fails if the generated files are out of date, and runs `scripts/validate`.
 
@@ -82,9 +94,9 @@ After cloning, enable the hook: `git config core.hooksPath scripts/hooks` (needs
 
 ## Scripts
 
-- `scripts/build-marketplace`: regenerates the marketplace file and each plugin.json's `skills` list, and checks skill frontmatter (valid YAML, `name` matches the folder, `description` present) and that there are no symlinks. It writes nothing when a check fails; `--check` writes nothing and fails when a generated file is out of date.
-- `scripts/validate`: `claude plugin validate --strict` on the marketplace and every plugin, plus the repo's checks: versions bumped (untracked files count as changes), `agents/openai.yaml` matching each skill's invocation, licences kept on vendored skills, every skill named in which-skill as a whole word, generated files current (`build-marketplace --check`), the files copied into several skills still identical (`PAIRED` in the script), and dispatch's Main health command passing its fixtures (`scripts/test-main-health`, needs bash and jq).
-- `scripts/test-main-health [file]`: runs the command in `dispatch/main-health.md` (or `file`'s first `sh` block) against fixture `gh` output for each red, pending and green case.
+- `scripts/build-marketplace`: regenerates the marketplace file and each plugin.json's `skills` list (a plugin without skills is left out), and checks skill frontmatter (valid YAML, `name` matches the folder, `description` present) and that there are no symlinks. It writes nothing when a check fails; `--check` writes nothing and fails when a generated file is out of date.
+- `scripts/validate`: `claude plugin validate --strict` on the marketplace and every plugin, plus the repo's checks: versions bumped (untracked files count as changes), `agents/openai.yaml` matching each skill's invocation, licences kept on vendored skills, every skill named in which-skill as a whole word (t3code and experimental excepted), no host names under `plugins/workflow` (`HOST_TERMS` in the script), generated files current (`build-marketplace --check`), the files copied into several skills still identical (`PAIRED` in the script), and dispatch's Main health command passing its fixtures (`scripts/test-main-health`, needs bash and jq).
+- `scripts/test-main-health [file]`: runs the command in t3code's `dispatch/main-health.md` (or `file`'s first `sh` block) against fixture `gh` output for each red, pending and green case.
 - `scripts/bump`: bumps a plugin's version.
 - `scripts/measure-context`: estimates always-on skill tokens outside any project (see `docs/baseline.md`); `scripts/measure-skills <plugin-dir>...` does the same for plugin folders.
 

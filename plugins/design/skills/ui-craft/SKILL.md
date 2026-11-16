@@ -13,7 +13,7 @@ Read [contract.md](contract.md) first: who decides and the output shape.
 ## Mode
 
 - **Review**: existing code, a path or a screenshot is given. Audit it against the rules and [references/checklist.md](references/checklist.md), and report findings by severity with concrete fixes.
-- **Build**: otherwise. Take the data, the users and the main action from the plan, `PRODUCT.md` and the code. State what you assumed; choices that are the user's (the audience tier, a visible change of look) go into Open questions, and under a build or autopilot you take the recommended option.
+- **Build**: otherwise. Take the data, the users and the main action from the plan, `PRODUCT.md` and the code. State what you assumed; choices that are the user's (the audience tier, a visible change of look) go into Open questions, resolved as the contract's Who decides says.
 
 Either way, finish by running the checklist and stating what is covered and what is left out on purpose.
 

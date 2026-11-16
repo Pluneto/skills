@@ -1,0 +1,11 @@
+{
+  "name": "experimental",
+  "version": "0.1.0",
+  "description": "Skills under test. They may change or disappear; a skill that proves itself moves to another plugin.",
+  "author": {
+    "name": "Pluneto"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Pluneto/skills",
+  "repository": "https://github.com/Pluneto/skills"
+}

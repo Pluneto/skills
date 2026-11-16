@@ -1,6 +1,6 @@
 {
   "name": "design",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Design skills that fit the workflow plugin: product-context (who it is for), design-review (shape and critique) and ui-craft (build the UI).",
   "author": {
     "name": "Pluneto"

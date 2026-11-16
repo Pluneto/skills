@@ -9,7 +9,8 @@ Shared by product-context, design-review and ui-craft, so the workflow skills ca
 The design skill decides nothing that is the user's to decide. Each such choice becomes an **Open question**, resolved by whoever called the skill:
 
 - **plan-this** (or interview) is running: return the Open questions. They become frontier decisions in its interview.
-- **build-this, solve-this, or any unattended run**: take the recommended option, note it as `Assumed: <choice> (<why>)` in the output, and carry on.
+- **build-this** is running, or a child it briefed, attended or not: return the Open questions. It settles them as it settles any deviation from its plan: the user's choices go to the user before the next milestone.
+- **Any other unattended run** (the caller says there is no user): take the recommended option, note it as `Assumed: <choice> (<why>)` in the output, and carry on.
 - **The user typed the skill** and no workflow skill is running: after the output, hand the Open questions to the **interview** skill as its frontier, then finish the work with its answers (for product-context, Apply). Without interview, end the turn on the numbered Open questions.
 
 Facts you can look up (in the repo, the docs, the code) are never Open questions: look them up. A choice with one sensible answer is an assumption: state it under Assumptions instead.

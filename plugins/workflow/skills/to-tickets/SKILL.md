@@ -10,20 +10,20 @@ Break a plan, spec or conversation into **tickets**: tracer-bullet vertical slic
 
 **Tracker:** follow `docs/agents/issue-tracker.md` (setup-pluneto-skills writes it): it says where tickets go and which labels mark them. When the repo has none, read [no-tracker-doc.md](no-tracker-doc.md) and ask its tracker question before publishing, also for an agreed plan file: no plan says where its tickets go.
 
-## Process
+The tickets are done when each is a slice an agent can own for one session, every one has been checked against what the tracker already holds, the user approved the breakdown, and they are published with their blocking edges.
 
-### 1. Gather context
+## 1. Know the source and the tracker
 
-Work from the conversation. If the user passes a reference (a `plan-*.md` path, a spec path, an issue number or URL), fetch and read all of it, with comments. A plan from plan-this is agreed: its decisions are settled, and its milestones, done-when checks and Needs from you are the starting material for the slices. An issue with the planned label is such a plan: read it from its plan comment (the one holding `Created <date> with /plan-this`). An issue with the draft label is not planned yet: stop and point to `/plan-this issues <n>`.
+Read the source whole (the conversation, or a `plan-*.md`, spec or issue with its comments). A plan from plan-this is agreed: its decisions are settled, and its milestones, Done-when checks and Needs from you are the starting material. An issue with the planned label is such a plan: read it from its plan comment (the one holding `Created <date> with /plan-this`). An issue with the draft label is not planned yet: stop and point to `/plan-this issues <n>`.
 
-Read the tracker, so step 3 can find tickets that already cover the work:
+Read the tracker, so you can find tickets that already cover the work:
 
 - **GitHub**: every open issue (`gh issue list --state open --limit 1000 --json number,title,labels,assignees,body`) plus issues closed in the last 30 days (`--state closed --search "closed:>=<date 30 days ago>"`). Keep the first ~300 characters of each body. Leave out issues with the draft or planned label, and any closed issue whose comments say `planned in #<parent>` (step 3 sees those comments when it reads a candidate): they are plans, not work, so never a duplicate, done or append target. When 1000 come back the list is cut off: in step 3 also run 2-3 `gh search issues "<phrasing>" --state open` per draft.
 - **Local**: every ticket file under `plans/*/tickets/`, whatever its `Status:`.
 
-Optionally explore the codebase to learn its current state: use the project's glossary vocabulary in titles, respect ADRs in the area, and look for prefactoring that makes the change easy ("make the change easy, then make the easy change").
+Use the project's glossary vocabulary in titles, respect ADRs in the area, and look for prefactoring that makes the change easy.
 
-### 2. Draft vertical slices
+## 2. Draft vertical slices
 
 Break the work into **tracer bullet** tickets.
 
@@ -43,7 +43,7 @@ Mark each ticket **agent** or **human**. **Human** when the user must do its cor
 
 **Wide refactors are the exception to vertical slicing.** A **wide refactor** is one mechanical change (rename a column, retype a shared symbol) whose **blast radius** spans the codebase, so one edit breaks thousands of call sites and no vertical slice lands green. Sequence it as **expand–contract**: first expand (add the new form beside the old so nothing breaks); then migrate call sites in batches sized by blast radius (per package or directory), each batch its own ticket blocked by the expand, CI green throughout because the old form still exists; finally contract (delete the old form) in a ticket blocked by every batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify ticket; green is promised only there.
 
-### 3. Check the tracker for matches
+## 3. Check the tracker for matches
 
 First merge drafts that deliver the same outcome into one, with both sets of acceptance criteria.
 
@@ -69,9 +69,9 @@ Record the existing ticket's state. **Claimed**: on GitHub an assignee, the `in-
 
 Claimed tickets are never rewritten and done tickets never reopened: someone else owns them. When a skipped draft blocked another draft, point that edge at the existing ticket (drop it when that ticket is done).
 
-Done when every draft has a class, a target ticket (or "new") and an action.
+Every draft ends with a class, a target ticket (or "new") and an action.
 
-### 4. Quiz the user
+## 4. Get the breakdown approved
 
 When the source is an agreed plan file, skip the breakdown questions (not the tracker question): its interview settled the work. Show the breakdown (the list below) in one message and go on to step 5, except when step 3 found a match: then ask the match question first.
 
@@ -81,7 +81,7 @@ Otherwise present the breakdown as a numbered list; for each ticket show **Title
 
 Then ask: Does the granularity feel right (too coarse or fine)? Does each ticket depend only on tickets that genuinely gate it? Should any be merged or split? Iterate until the user approves.
 
-### 5. Publish the tickets
+## 5. Publish the tickets
 
 Run each draft's action: make the appends, then publish the tickets to create (new, related and delta).
 
@@ -104,8 +104,8 @@ Leave any parent issue open and unchanged, except: once a planned source's ticke
 
 Finish with the published list (number or file, title, agent/human, blocked by), one line per appended or skipped draft naming its existing ticket, the counts (`created N, merged N, skipped N`: merged counts appends, skipped counts duplicates), and the exact line to run next:
 
-- `/build-this <tickets folder>` or `/build-this issues <first>-<last>` (bare numbers: T3's composer turns a typed `#<n>` into a pull-request chip): one session works them in blocker order, skipping human tickets.
-- On GitHub, when two or more agent tickets can run at once, also offer `/dispatch`, which takes ownership of them and finishes them with parallel workers.
+- `/build-this <tickets folder>` or `/build-this issues <first>-<last>` (bare numbers, since some composers turn a typed `#<n>` into a link): one session works them in blocker order, skipping human tickets.
+- On GitHub, when two or more agent tickets can run at once and a parallel-worker skill is installed for this harness, offer it too.
 
 <local-ticket-template>
 
