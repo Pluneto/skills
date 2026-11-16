@@ -179,6 +179,29 @@ class SessionStartTests(HookCase):
         self.assertIn("Fact 0:", text)
         self.assertNotIn("Fact 399:", text)
 
+    def test_overlong_updated_line_cannot_push_the_injection_past_10k(self):
+        plan = write_plan(self.repo, ["- built M1"])
+        path = write_state(self.repo, SID, "Fact: kept\n", plan, updated="2026-11-16T10:00:00Z" + "x" * 12000)
+        text = self.inject()
+        self.assertLess(len(text), 10000)
+        header = text.split("\n\n", 1)[0]
+        self.assertIn(str(path), header)
+        self.assertIn(str(plan), header)
+        self.assertIn("2026-11-16T10:00:00Z", header)
+        self.assertIn("Read", header)
+
+    def test_build_log_line_starting_with_a_hash_does_not_end_the_section(self):
+        plan = write_plan(self.repo, ["- M1 done", "#29 merged", "- M2 done", "- M3 done"])
+        write_state(self.repo, SID, "Fact: kept\n", plan)
+        text = self.inject()
+        for line in ("- M1 done", "#29 merged", "- M2 done", "- M3 done"):
+            self.assertIn(line, text)
+
+    def test_non_ascii_is_not_escaped(self):
+        plan = write_plan(self.repo, ["- built M1"])
+        write_state(self.repo, SID, "Rules from the user: caf\u00e9 \u2014 always\n", plan)
+        self.assertIn("caf\u00e9 \u2014 always", self.inject())
+
     def test_long_build_log_line_is_cut_to_300_chars_and_flagged(self):
         plan = write_plan(self.repo, ["- " + "y" * 600])
         write_state(self.repo, SID, "Milestone: M1\n", plan)

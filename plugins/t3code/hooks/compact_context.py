@@ -22,6 +22,8 @@ NUDGE_ENV = "T3_COMPACT_NUDGE_TOKENS"  # tests only
 MAX_INJECT_CHARS = 9500        # Claude Code caps hook context at 10k chars
 BUILD_LOG_LINES = 5
 BUILD_LOG_LINE_CHARS = 300
+UPDATED_CHARS = 80             # header fields are cut too, so the header always fits
+PLAN_PATH_CHARS = 1000
 TAIL_CHUNK = 64 * 1024         # first read from the end of the transcript; doubles until a usage line is found
 SAFE_SESSION_ID = re.compile(r"^[\w.-]+$")
 
@@ -71,7 +73,7 @@ def build_log_tail(plan_path):
         return [], False
     section = []
     for line in lines[start + 1:]:
-        if line.startswith("#"):
+        if re.match(r"#{1,6}\s", line):  # the next heading; a log line like "#29 merged" is not one
             break
         if line.strip():
             section.append(line)
@@ -82,7 +84,8 @@ def build_log_tail(plan_path):
 
 def inject_text(state_path):
     state = state_path.read_text(encoding="utf-8", errors="replace")
-    plan = field(state, "Plan")
+    plan = field(state, "Plan")[:PLAN_PATH_CHARS]
+    updated = field(state, "Updated")[:UPDATED_CHARS]
     log, log_cut = build_log_tail(plan) if plan else ([], False)
     log_block = ("Build log (last lines of the plan):\n" + "\n".join(log)) if log else ""
 
@@ -95,7 +98,7 @@ def inject_text(state_path):
         note = (f" Cut: {'; '.join(cuts)}. Read the live-state file and the plan in full before continuing."
                 if cuts else "")
         return (f"Live state restored after compaction. Live-state file: {state_path}. Plan: {plan or '(none named)'}. "
-                f"File updated: {field(state, 'Updated') or '(unknown)'}.{note}")
+                f"File updated: {updated or '(unknown)'}.{note}")
 
     def assemble(head, body):
         return "\n\n".join(part for part in (head, body, log_block) if part)
@@ -106,7 +109,7 @@ def inject_text(state_path):
     head = header(True)
     marker = "\n[... cut, Read the file for the rest]"
     room = MAX_INJECT_CHARS - len(assemble(head, marker))
-    return assemble(head, state.strip()[:max(room, 0)] + marker)
+    return assemble(head, state.strip()[:max(room, 0)] + marker)[:MAX_INJECT_CHARS]
 
 
 def read_tail_usage(transcript_path):
@@ -155,7 +158,7 @@ def nudge_threshold():
 
 
 def on_pre_compact(data, state, marker):
-    return PRECOMPACT_TEXT.format(path=state, updated=field(state.read_text(errors="replace"), "Updated") or "unknown")
+    return PRECOMPACT_TEXT.format(path=state, updated=field(state.read_text(errors="replace"), "Updated")[:UPDATED_CHARS] or "unknown")
 
 
 def on_session_start(data, state, marker):
@@ -163,7 +166,7 @@ def on_session_start(data, state, marker):
         return ""
     marker.unlink(missing_ok=True)
     return json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart",
-                                              "additionalContext": inject_text(state)}})
+                                              "additionalContext": inject_text(state)}}, ensure_ascii=False)
 
 
 def on_stop(data, state, marker):
@@ -193,5 +196,8 @@ if __name__ == "__main__":
     except Exception:  # a hook must never fail the session
         out = ""
     if out:
-        print(out)
+        try:
+            sys.stdout.buffer.write(out.encode("utf-8") + b"\n")
+        except Exception:
+            pass
     sys.exit(0)
