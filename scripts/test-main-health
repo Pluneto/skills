@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test dispatch's Main health command against fixture `gh` output.
 
-scripts/test-main-health [markdown file]  (default: dispatch/main-health.md)
+scripts/test-main-health [markdown file]  (default: plugins/t3code/skills/dispatch/main-health.md)
 
 Runs the first ```sh block of the file with bash, `<default branch>` set to
 main, and a stub `gh` first on PATH that serves each case's fixture JSON and
@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT = ROOT / "plugins" / "workflow" / "skills" / "dispatch" / "main-health.md"
+DEFAULT = ROOT / "plugins" / "t3code" / "skills" / "dispatch" / "main-health.md"
 
 STUB = r"""#!/usr/bin/env bash
 # gh stub: answers from $FIXTURE, applying --jq with jq.

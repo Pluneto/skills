@@ -22,7 +22,7 @@ Each prevents a collision or a decision made without the user.
 - **User-level decisions** (product behaviour, UI or copy, scope, real data, privacy or security, a new dependency, service or cost) are parked: question, options and recommendation as an issue comment mentioning the Decision owner, the decision label, the same question as plain text in the thread (question tools break T3 threads), then wait. Everything else is an engineering call, noted in the PR.
 - **Real data.** Workers write only to a local stack, never to shared or staging data.
 - **Review, then merge.** Every PR is reviewed by a different model from its author's (the doc's Review command, else a sub-agent or `delegate_task` on another model), then the worker merges it once CI and main are green (a PR that fixes the red main merges on its own green CI). Dispatching is the user's go-ahead: end every brief with the line `merge if green`, which repos' land rules look for.
-- **Red main first.** Only the fix merges onto a red main. Check with the doc's Main health command (blank: [main-health.md](main-health.md)), repair per [fix-ladder.md](../build-this/fix-ladder.md)'s Red main, then tell waiting workers to land again.
+- **Red main first.** Only the fix merges onto a red main. Check with the doc's Main health command (blank: [main-health.md](main-health.md)), repair per [fix-ladder.md](fix-ladder.md)'s Red main, then tell waiting workers to land again.
 
 ## Run
 

@@ -1,6 +1,8 @@
 ---
 name: "solve-this"
 description: Solve a task end to end on autopilot with minimal user input, then prove it is solved. Runs /plan-this and /build-this without asking the user anything, keeps diagnosing and retrying until the result passes its checks, and stops with one report containing evidence. Use when the user says "/solve-this", "solve this", "handle this end to end", "autopilot", or hands over a goal and wants no interview, approvals or check-ins, even if they don't name the skill. Not for goals where the user wants to steer decisions (use /plan-this).
+metadata:
+  internal: true
 compatibility: Requires the plan-this, interview, build-this and research-this skills. The use-available-skills skill and a sub-agent tool (the Agent tool in Claude Code) are optional (skill discovery; independent verification).
 ---
 

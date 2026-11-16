@@ -7,9 +7,11 @@ then the repo's own checks:
 - every skill has agents/openai.yaml, with allow_implicit_invocation: false
   exactly when SKILL.md has disable-model-invocation: true
 - every skill copied from mattpocock/skills keeps its LICENSE
-- every skill is named in the which-skill router (as a whole word)
+- every skill is named in the which-skill router (as a whole word), except
+  those of host and staging plugins (UNROUTED), which the router must not name
+- a plugin without skills (plugins/experimental between tests) is skipped
 - the generated marketplace files are current (scripts/build-marketplace --check)
-- dispatch's Main health command passes its fixtures (scripts/test-main-health)
+- t3code dispatch's Main health command passes its fixtures (scripts/test-main-health)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
 """
@@ -28,6 +30,8 @@ VENDORED = {"tdd", "diagnosing-bugs", "review-changes", "pr", "prototype", "code
             "improve-codebase-architecture", "domain-modeling", "wayfinder", "to-tickets",
             "to-questionnaire", "wizard", "writing-for-agents", "handoff", "which-skill",
             "setup-pluneto-skills"}
+# Plugins whose skills the host-neutral router leaves out.
+UNROUTED = {"t3code", "experimental"}
 ROUTER = ROOT / "plugins" / "workflow" / "skills" / "which-skill" / "SKILL.md"
 # Files copied into several skills (no symlinks allowed): each group must stay identical.
 PAIRED = [
@@ -91,7 +95,8 @@ def skill_problems(skill):
     if skill.name in VENDORED and not (skill / "LICENSE").is_file():
         found.append(f"{rel}: copied from mattpocock/skills, keep its LICENSE")
     named = re.compile(rf"(?<![\w-]){re.escape(skill.name)}(?![\w-])")
-    if ROUTER.is_file() and skill.name != "which-skill" and not named.search(ROUTER.read_text(encoding="utf-8")):
+    if (ROUTER.is_file() and skill.name != "which-skill" and skill.parent.parent.name not in UNROUTED
+            and not named.search(ROUTER.read_text(encoding="utf-8"))):
         found.append(f"{rel}: not named in which-skill")
     return found
 
@@ -138,7 +143,8 @@ def repo_problems():
 
 
 def main():
-    plugins = sorted(p for p in (ROOT / "plugins").glob("*") if p.is_dir())
+    plugins = sorted(p for p in (ROOT / "plugins").glob("*")
+                     if p.is_dir() and any(s.is_dir() for s in (p / "skills").glob("*")))
     failed = False
     for target in [ROOT] + plugins:
         found = cli_problems(target)

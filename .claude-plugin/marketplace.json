@@ -27,6 +27,11 @@
       "description": "Write and maintain skills: writing-for-agents, skill-updater, skill-ozempic and the end-of-session reflect retro."
     },
     {
+      "name": "t3code",
+      "source": "./plugins/t3code",
+      "description": "T3 Code host skills on top of workflow: t3-orchestration (child agents, threads, waiting) and dispatch (parallel workers on a repo's tickets)."
+    },
+    {
       "name": "workflow",
       "source": "./plugins/workflow",
       "description": "Plan, build, solve and research goals end to end: plan-this, interview, build-this, solve-this, research-this, review-this, t3-orchestration, use-available-skills, wayfinder, to-tickets, dispatch, plus handoff, to-questionnaire, wizard and the which-skill router."
