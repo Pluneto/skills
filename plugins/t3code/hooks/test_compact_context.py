@@ -27,7 +27,7 @@ def make_repo(root):
 
 
 def live_state_dir(cwd):
-    return Path(git(cwd, "rev-parse", "--absolute-git-dir")) / "live-state"
+    return Path(git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")) / "live-state"
 
 
 def write_state(cwd, sid, body, plan, updated="2026-11-16T10:00:00Z"):
@@ -230,15 +230,36 @@ class SessionStartTests(HookCase):
         path.write_text("Updated: 2026-11-16T10:00:00Z\nMilestone: M1\n", encoding="utf-8")
         self.assertIn("Milestone: M1", self.inject())
 
-    def test_linked_worktree_uses_its_own_git_dir(self):
+    def linked_worktree(self):
         linked = Path(self.tmp.name) / "linked"
         git(self.repo, "worktree", "add", "-q", "-b", "side", str(linked))
-        self.assertNotEqual(live_state_dir(linked), linked / ".git" / "live-state")
+        return linked
+
+    def inject_from(self, cwd):
+        code, out = run_hook(dict(self.payload("SessionStart", source="compact"), cwd=str(cwd)))
+        return json.loads(out)["hookSpecificOutput"]["additionalContext"]
+
+    def test_linked_worktree_keeps_its_file_in_the_common_git_dir(self):
+        linked = self.linked_worktree()
+        self.assertEqual(live_state_dir(linked), self.repo / ".git" / "live-state")
         write_state(linked, SID, "Milestone: LINKED\n", self.plan)
-        code, out = run_hook(dict(self.payload("SessionStart", source="compact"), cwd=str(linked)))
-        self.assertIn("Milestone: LINKED", json.loads(out)["hookSpecificOutput"]["additionalContext"])
-        # the main checkout has no file of its own
-        self.assertSilent(self.payload("SessionStart", source="compact"))
+        self.assertIn("Milestone: LINKED", self.inject_from(linked))
+
+    def test_file_survives_a_removed_and_recreated_worktree(self):
+        linked = self.linked_worktree()
+        write_state(linked, SID, "Milestone: KEPT\n", self.plan)
+        git(self.repo, "worktree", "remove", "--force", str(linked))
+        git(self.repo, "worktree", "add", "-q", str(linked), "side")
+        self.assertIn("Milestone: KEPT", self.inject_from(linked))
+
+    def test_file_in_the_worktrees_own_git_dir_is_still_found(self):
+        linked = self.linked_worktree()
+        old = Path(git(linked, "rev-parse", "--absolute-git-dir")) / "live-state" / f"{SID}.md"
+        old.parent.mkdir(parents=True)
+        old.write_text("Updated: 2026-11-16T10:00:00Z\nMilestone: OLD PLACE\n", encoding="utf-8")
+        self.assertIn("Milestone: OLD PLACE", self.inject_from(linked))
+        write_state(linked, SID, "Milestone: NEW PLACE\n", self.plan)
+        self.assertIn("Milestone: NEW PLACE", self.inject_from(linked))
 
     def test_clears_the_nudge_marker(self):
         write_state(self.repo, SID, "Milestone: M1\n", self.plan)
@@ -261,11 +282,11 @@ class StopTests(HookCase):
         return run_hook(payload, env=dict({"T3CODE_THREAD_ID": THREAD}, **(env or {})))
 
     def test_below_threshold_is_silent(self):
-        self.assertEqual(self.stop([usage_line(199999)]), (0, ""))
+        self.assertEqual(self.stop([usage_line(249999)]), (0, ""))
         self.assertFalse(self.marker.exists())
 
     def test_at_threshold_blocks_with_instructions(self):
-        code, out = self.stop([usage_line(200000)])
+        code, out = self.stop([usage_line(250000)])
         self.assertEqual(code, 0)
         decision = json.loads(out)
         self.assertEqual(decision["decision"], "block")
@@ -276,7 +297,7 @@ class StopTests(HookCase):
 
     def test_context_is_input_plus_cache_read_plus_cache_creation(self):
         line = json.dumps({"type": "assistant", "message": {"usage": {
-            "input_tokens": 100000, "cache_read_input_tokens": 60000, "cache_creation_input_tokens": 40000}}})
+            "input_tokens": 150000, "cache_read_input_tokens": 60000, "cache_creation_input_tokens": 40000}}})
         self.assertEqual(json.loads(self.stop([line])[1])["decision"], "block")
         self.marker.unlink()
         line = line.replace("60000", "59999")

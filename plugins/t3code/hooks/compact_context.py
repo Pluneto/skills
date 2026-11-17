@@ -6,9 +6,11 @@ One script, three events (from the hook input's `hook_event_name`, else argv[1])
   SessionStart (compact)  re-inject the live-state file and the plan's Build log tail
   Stop                    at a turn boundary, past a context size, ask the agent to compact itself
 
-The live-state file is `<git dir>/live-state/<session_id>.md`, found from the hook's cwd.
+The live-state file is `<common git dir>/live-state/<session_id>.md`, found from the hook's cwd. The common
+dir is shared by all worktrees of a repository, so the file survives a worktree that is removed and recreated;
+a file in the worktree's own git dir (where 1.1.0 kept it) is still found.
 Every branch is a silent no-op without that file, for a native sub-agent (`agent_id`), and on any error.
-Marker of a given nudge: `<git dir>/live-state/<session_id>.nudged`, cleared after a compaction.
+Marker of a given nudge: `<session_id>.nudged` next to the file, cleared after a compaction.
 """
 import json
 import os
@@ -17,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-NUDGE_TOKENS = 200000          # context size at which Stop asks for a compaction
+NUDGE_TOKENS = 250000          # context size at which Stop asks for a compaction; auto-compact (window 300000) follows at ~276k
 NUDGE_ENV = "T3_COMPACT_NUDGE_TOKENS"  # tests only
 MAX_INJECT_CHARS = 9500        # Claude Code caps hook context at 10k chars
 BUILD_LOG_LINES = 5
@@ -35,14 +37,16 @@ The orchestrator's live-state file {path} is re-attached after this compaction, 
 
 STOP_TEXT = """\
 Context is {tokens} tokens: compact now, at this turn boundary. Do these in order and nothing else:
-1. Rewrite the live-state file {path} so it holds everything you still need (keep its first two lines, `Updated:` and `Plan:`, with a fresh time).
+1. Rewrite the live-state file {path} so it holds everything you still need (keep its first two lines, `Updated:` and `Plan:`, with a fresh time). Only its first 9,000 characters come back after the compaction: put the facts you act on first, and move how-you-work text that the plan or a skill already holds out of it.
 2. Call t3_thread_send with threadId "{thread}", mode "queue", and message "/compact " followed by a one-line focus (the plan path, the current milestone, your next action).
 3. End your turn with no further tool calls."""
 
 
-def git_dir(cwd):
-    run = subprocess.run(["git", "-C", cwd, "rev-parse", "--absolute-git-dir"], capture_output=True, text=True)
-    return Path(run.stdout.strip()) if run.returncode == 0 and run.stdout.strip() else None
+def git_dirs(cwd):
+    """The repository's common git dir, then this worktree's own git dir (the pre-1.2.0 place)."""
+    run = subprocess.run(["git", "-C", cwd, "rev-parse", "--path-format=absolute", "--git-common-dir", "--absolute-git-dir"],
+                         capture_output=True, text=True)
+    return list(dict.fromkeys(Path(line) for line in run.stdout.split("\n") if line)) if run.returncode == 0 else []
 
 
 def state_paths(data):
@@ -50,11 +54,11 @@ def state_paths(data):
     session_id = data.get("session_id") or ""
     if data.get("agent_id") or not SAFE_SESSION_ID.match(session_id):
         return None
-    directory = git_dir(data.get("cwd") or os.getcwd())
-    if directory is None:
-        return None
-    state = directory / "live-state" / f"{session_id}.md"
-    return (state, state.with_suffix(".nudged")) if state.is_file() else None
+    for directory in git_dirs(data.get("cwd") or os.getcwd()):
+        state = directory / "live-state" / f"{session_id}.md"
+        if state.is_file():
+            return state, state.with_suffix(".nudged")
+    return None
 
 
 def field(text, name):
@@ -95,7 +99,7 @@ def inject_text(state_path):
             cuts.append("the live-state file below is cut")
         if log_cut:
             cuts.append(f"Build log lines are cut to {BUILD_LOG_LINE_CHARS} chars")
-        note = (f" Cut: {'; '.join(cuts)}. Read the live-state file and the plan in full before continuing."
+        note = (f" Cut: {'; '.join(cuts)}. Your first tool call must Read the live-state file in full, then the plan's Build log."
                 if cuts else "")
         return (f"Live state restored after compaction. Live-state file: {state_path}. Plan: {plan or '(none named)'}. "
                 f"File updated: {updated or '(unknown)'}.{note}")
