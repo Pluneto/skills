@@ -7,8 +7,6 @@ description: Grill a diff, plan or implementation with another model, round afte
 
 You are the **author**; a **reviewer** from the other provider grills your change or plan against its intent, round after round, in one read-only session. You answer each finding with the smallest fix or with evidence, push back on scope creep, and stop on approval, a stalemate or the end of the budget. Reviewer commands: [`reviewer.md`](reviewer.md); the briefs it receives, with the severity rules and reply format: [`briefs.md`](briefs.md).
 
-Adapted from sol-loop in [t3dotgg/tstack](https://github.com/t3dotgg/tstack) (MIT, see [`LICENSE`](LICENSE)).
-
 ## Input
 
 The **target**: a diff, a plan, or an implementation (a diff plus the plan or ticket it carries out). Optionally a base commit, the intent, a reviewer model or effort.

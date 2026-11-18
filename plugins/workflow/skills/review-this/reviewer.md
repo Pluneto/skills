@@ -6,8 +6,8 @@ How review-this starts and resumes its reviewer. `$dir` is the run's temp folder
 
 The reviewer comes from the other provider:
 
-- **In Claude, with `codex` on PATH** (`command -v codex`): Codex, model `gpt-6.1-sol`, effort `high`.
-- **In Codex, with `claude` on PATH** (`command -v claude`): Claude, model `claude-opus-5-5`, effort `high`.
+- **In Claude, with `codex` on PATH** (`command -v codex`): Codex, model `gpt-6.2-sol`, effort `medium`.
+- **In Codex, with `claude` on PATH** (`command -v claude`): Claude, model `claude-opus-5-5`, effort `medium`.
 - **Otherwise**: the sub-agent fallback below.
 
 A model or effort the user names replaces the default. When the account isn't served the default model, run again with the newest Sol (or Opus) model the error or the CLI names. Report the model and effort exactly as run.
