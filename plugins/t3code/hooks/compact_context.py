@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
-"""Compaction hooks for orchestrator sessions that keep a live-state file.
+"""Compaction hooks for sessions that keep a live-state file.
 
-One script, three events (from the hook input's `hook_event_name`, else argv[1]):
+Usage: compact_context.py <Event> [--host t3|cli]. One script, three events (from the hook input's
+`hook_event_name`, else argv[1]):
   PreCompact              print summary instructions
   SessionStart (compact)  re-inject the live-state file and the plan's Build log tail
-  Stop                    at a turn boundary, past a context size, ask the agent to compact itself
+  Stop                    at a turn boundary, past a context size, ask the agent to compact
+
+Hosts (plugins/t3code and plugins/cli-host ship identical copies; each hooks.json passes its host):
+  t3 (default)  T3 Code: only a thread (T3CODE_THREAD_ID, not a delegated task) with a live-state file is
+                nudged, and the agent queues `/compact` to its own thread with t3_thread_send.
+  cli           plain Claude Code: every main session in a git repository is nudged; the agent writes its
+                live-state file (creating it if needed) and ends its turn with a `/compact` line the user runs.
 
 The live-state file is `<common git dir>/live-state/<session_id>.md`, found from the hook's cwd. The common
 dir is shared by all worktrees of a repository, so the file survives a worktree that is removed and recreated;
-a file in the worktree's own git dir (where 1.1.0 kept it) is still found.
-Every branch is a silent no-op without that file, for a native sub-agent (`agent_id`), and on any error.
+a file in the worktree's own git dir (where 1.1.0 kept it) is still found. On the cli host, with no such file,
+the file is `~/.claude/live-state/<session_id>.md` (for sessions that can't write the git dir).
+Every branch is a silent no-op outside a git repository, for a native sub-agent (`agent_id`), and on any
+error; PreCompact and SessionStart also without the file, and Stop too on the t3 host.
 Marker of a given nudge: `<session_id>.nudged` next to the file, cleared after a compaction.
 """
 import json
@@ -19,8 +28,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-NUDGE_TOKENS = 250000          # context size at which Stop asks for a compaction; auto-compact (window 300000) follows at ~276k
-NUDGE_ENV = "T3_COMPACT_NUDGE_TOKENS"  # tests only
+NUDGE_TOKENS = 250000          # context size at which Stop asks for a compaction; auto-compact (window 350000) follows at ~317k
+NUDGE_ENV = "COMPACT_NUDGE_TOKENS"  # tests only
 MAX_INJECT_CHARS = 9500        # Claude Code caps hook context at 10k chars
 BUILD_LOG_LINES = 5
 BUILD_LOG_LINE_CHARS = 300
@@ -41,6 +50,14 @@ Context is {tokens} tokens: compact now, at this turn boundary. Do these in orde
 2. Call t3_thread_send with threadId "{thread}", mode "queue", and message "/compact " followed by a one-line focus (the plan path, the current milestone, your next action).
 3. End your turn with no further tool calls."""
 
+STOP_TEXT_CLI = """\
+Context is {tokens} tokens: compact now, at this turn boundary. Only the user can start a compaction, so do these in order and nothing else:
+1. Write the live-state file {path} (create it, and its folder, if missing) so it holds everything you still need: first line `Updated: <current UTC time>`, second line `Plan: <plan file path, or none>`, then short facts: the user's rules from this chat, open questions, the current step and the next action. Only its first 9,000 characters come back after the compaction: put the facts you act on first.
+2. Reply in one short message: ask the user to run the line that follows, then make your last line exactly `/compact ` followed by a one-line focus (the plan or task, the current step, your next action). End your turn there, with no further tool calls."""
+
+SYSTEM_MESSAGE_CLI = ("Context is {tokens} tokens. The agent is saving its state and will end its turn with a "
+                      "/compact line: run it to compact before auto-compact cuts in mid-task.")
+
 
 def git_dirs(cwd):
     """The repository's common git dir, then this worktree's own git dir (the pre-1.2.0 place)."""
@@ -49,15 +66,20 @@ def git_dirs(cwd):
     return list(dict.fromkeys(Path(line) for line in run.stdout.split("\n") if line)) if run.returncode == 0 else []
 
 
-def state_paths(data):
-    """(live-state file, nudge marker) for this session, or None when there is no file to act on."""
+def state_paths(data, host):
+    """(live-state file, nudge marker) for this session, or None when there is nothing to act on.
+    On the cli host the file may not exist yet: then it is the one under ~/.claude/live-state."""
     session_id = data.get("session_id") or ""
     if data.get("agent_id") or not SAFE_SESSION_ID.match(session_id):
         return None
-    for directory in git_dirs(data.get("cwd") or os.getcwd()):
+    directories = git_dirs(data.get("cwd") or os.getcwd())
+    for directory in directories:
         state = directory / "live-state" / f"{session_id}.md"
         if state.is_file():
             return state, state.with_suffix(".nudged")
+    if host == "cli" and directories:
+        state = Path.home() / ".claude" / "live-state" / f"{session_id}.md"
+        return state, state.with_suffix(".nudged")
     return None
 
 
@@ -161,42 +183,53 @@ def nudge_threshold():
         return NUDGE_TOKENS
 
 
-def on_pre_compact(data, state, marker):
+def on_pre_compact(data, host, state, marker):
+    if not state.is_file():
+        return ""
     return PRECOMPACT_TEXT.format(path=state, updated=field(state.read_text(errors="replace"), "Updated")[:UPDATED_CHARS] or "unknown")
 
 
-def on_session_start(data, state, marker):
+def on_session_start(data, host, state, marker):
     if data.get("source", "compact") != "compact":
         return ""
     marker.unlink(missing_ok=True)
+    if not state.is_file():
+        return ""
     return json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart",
                                               "additionalContext": inject_text(state)}}, ensure_ascii=False)
 
 
-def on_stop(data, state, marker):
+def on_stop(data, host, state, marker):
     thread = os.environ.get("T3CODE_THREAD_ID", "")
-    if data.get("stop_hook_active") or not thread or thread.startswith("thread:delegated-task:") or marker.exists():
+    on_t3 = host != "cli"
+    if data.get("stop_hook_active") or marker.exists() or (
+            on_t3 and (not thread or thread.startswith("thread:delegated-task:"))):
         return ""
     tokens = read_tail_usage(data["transcript_path"])
     if tokens is None or tokens < nudge_threshold():
         return ""
+    marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text(str(tokens))
-    return json.dumps({"decision": "block", "reason": STOP_TEXT.format(tokens=tokens, path=state, thread=thread)})
+    if on_t3:
+        return json.dumps({"decision": "block", "reason": STOP_TEXT.format(tokens=tokens, path=state, thread=thread)})
+    return json.dumps({"decision": "block", "reason": STOP_TEXT_CLI.format(tokens=tokens, path=state),
+                       "systemMessage": SYSTEM_MESSAGE_CLI.format(tokens=tokens)})
 
 
 HANDLERS = {"PreCompact": on_pre_compact, "SessionStart": on_session_start, "Stop": on_stop}
 
 
-def main():
+def main(argv):
     data = json.loads(sys.stdin.read() or "{}")
-    handler = HANDLERS.get(data.get("hook_event_name") or (sys.argv[1] if len(sys.argv) > 1 else ""))
-    paths = state_paths(data) if handler else None
-    return handler(data, *paths) if paths else ""
+    host = argv[argv.index("--host") + 1] if "--host" in argv[:-1] else "t3"
+    handler = HANDLERS.get(data.get("hook_event_name") or (argv[1] if len(argv) > 1 else ""))
+    paths = state_paths(data, host) if handler else None
+    return handler(data, host, *paths) if paths else ""
 
 
 if __name__ == "__main__":
     try:
-        out = main()
+        out = main(sys.argv)
     except Exception:  # a hook must never fail the session
         out = ""
     if out:

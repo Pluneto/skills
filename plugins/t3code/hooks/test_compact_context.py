@@ -1,5 +1,7 @@
 """Tests for compact_context.py, driven through its public seam: hook input JSON on
-stdin, text or JSON on stdout. Run: python3 -m unittest discover -s plugins/t3code/hooks"""
+stdin, text or JSON on stdout, for both hosts (`--host t3`, the default, and `--host cli`).
+The same script is copied to plugins/cli-host/hooks (scripts/validate keeps the copies identical).
+Run: python3 -m unittest discover -s plugins/t3code/hooks"""
 import json
 import os
 import subprocess
@@ -7,17 +9,21 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parent / "compact_context.py"
 SID = "11111111-1111-1111-1111-111111111111"
 OTHER_SID = "22222222-2222-2222-2222-222222222222"
 THREAD = "thread-abc"
+# GIT_* goes too: a git hook (the pre-commit run of scripts/validate) exports GIT_DIR and GIT_INDEX_FILE,
+# which would point every git call here at the repository being committed instead of the temp repos.
 CLEAN_ENV = {k: v for k, v in os.environ.items()
-             if k not in ("T3_COMPACT_NUDGE_TOKENS", "T3CODE_THREAD_ID", "CLAUDE_CODE_SESSION_ID")}
+             if k not in ("COMPACT_NUDGE_TOKENS", "T3CODE_THREAD_ID", "CLAUDE_CODE_SESSION_ID") and not k.startswith("GIT_")}
 
 
 def git(cwd, *args):
-    return subprocess.run(["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True).stdout.strip()
+    return subprocess.run(["git", "-C", str(cwd), *args], check=True, capture_output=True, text=True,
+                          env=CLEAN_ENV).stdout.strip()
 
 
 def make_repo(root):
@@ -73,6 +79,11 @@ class HookCase(unittest.TestCase):
         repo.mkdir()
         self.repo = make_repo(repo)
         self.plan = write_plan(self.repo, ["- built M1", "- built M2"])
+        self.home = Path(self.tmp.name) / "home"  # the CLI host's fallback folder lives under $HOME
+        self.home.mkdir()
+        patcher = mock.patch.dict(CLEAN_ENV, {"HOME": str(self.home)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def payload(self, event, **extra):
         return dict({"hook_event_name": event, "session_id": SID, "cwd": str(self.repo)}, **extra)
@@ -86,8 +97,11 @@ class NoOpTests(HookCase):
     EVENTS = ("PreCompact", "SessionStart", "Stop")
 
     def test_no_live_state_file(self):
-        for event in self.EVENTS:
-            self.assertSilent(self.payload(event, transcript_path="/nonexistent"))
+        transcript = write_transcript(Path(self.tmp.name) / "t.jsonl", [usage_line(300000)])
+        for argv in ((), ("--host", "t3")):
+            for event in self.EVENTS:
+                self.assertSilent(self.payload(event, transcript_path=transcript, stop_hook_active=False),
+                                  event, *argv, env={"T3CODE_THREAD_ID": THREAD})
 
     def test_agent_id_in_input_is_ignored(self):
         write_state(self.repo, SID, "Milestone: M1\n", self.plan)
@@ -309,8 +323,8 @@ class StopTests(HookCase):
         self.assertEqual(self.stop(lines), (0, ""))
 
     def test_threshold_override_by_env(self):
-        self.assertEqual(self.stop([usage_line(5000)], env={"T3_COMPACT_NUDGE_TOKENS": "6000"}), (0, ""))
-        code, out = self.stop([usage_line(5000)], env={"T3_COMPACT_NUDGE_TOKENS": "4000"})
+        self.assertEqual(self.stop([usage_line(5000)], env={"COMPACT_NUDGE_TOKENS": "6000"}), (0, ""))
+        code, out = self.stop([usage_line(5000)], env={"COMPACT_NUDGE_TOKENS": "4000"})
         self.assertEqual(json.loads(out)["decision"], "block")
 
     def test_stop_hook_active_is_silent(self):
@@ -331,10 +345,13 @@ class StopTests(HookCase):
         payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=False)
         self.assertEqual(run_hook(payload, env=env), (0, ""))
 
-    def test_without_thread_id_is_silent(self):
+    def test_without_thread_id_is_silent_on_t3_and_nudges_on_cli(self):
         write_transcript(self.transcript, [usage_line(300000)])
         payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=False)
         self.assertEqual(run_hook(payload), (0, ""))
+        self.assertEqual(run_hook(payload, "Stop", "--host", "t3"), (0, ""))
+        code, out = run_hook(payload, "Stop", "--host", "cli")
+        self.assertEqual(json.loads(out)["decision"], "block")
 
     def test_big_line_before_a_compact_boundary_does_not_count(self):
         boundary = json.dumps({"type": "system", "subtype": "compact_boundary"})
@@ -355,6 +372,80 @@ class StopTests(HookCase):
         huge_last["message"]["content"] = "w" * 400000  # a last line bigger than the first tail chunk
         lines = [usage_line(10000)] + [filler] * 30 + [json.dumps(huge_last), json.dumps({"type": "user", "message": {}})]
         self.assertEqual(json.loads(self.stop(lines)[1])["decision"], "block")
+
+
+class CliTests(HookCase):
+    """`--host cli`: plain Claude Code. Any main session in a git repo is nudged; the user types /compact."""
+
+    def setUp(self):
+        super().setUp()
+        self.transcript = Path(self.tmp.name) / "t.jsonl"
+        self.fallback = self.home / ".claude" / "live-state" / f"{SID}.md"
+
+    def run_cli(self, event, **extra):
+        return run_hook(self.payload(event, **extra), event, "--host", "cli")
+
+    def stop(self, tokens=300000, **extra):
+        write_transcript(self.transcript, [usage_line(tokens)])
+        return self.run_cli("Stop", transcript_path=str(self.transcript), stop_hook_active=False, **extra)
+
+    def test_without_a_file_nudges_and_names_the_home_fallback(self):
+        code, out = self.stop()
+        self.assertEqual(code, 0)
+        decision = json.loads(out)
+        self.assertEqual(decision["decision"], "block")
+        reason = decision["reason"]
+        for needed in (str(self.fallback), "Updated:", "Plan:", "/compact", "300000"):
+            self.assertIn(needed, reason)
+        self.assertNotIn("t3_thread_send", reason)
+        self.assertIn("/compact", decision["systemMessage"])
+        self.assertTrue(self.fallback.with_suffix(".nudged").exists())
+        self.assertFalse(self.fallback.exists())  # the agent writes the file, not the hook
+
+    def test_an_existing_file_in_the_git_dir_wins(self):
+        state = write_state(self.repo, SID, "Milestone: M1\n", self.plan)
+        reason = json.loads(self.stop()[1])["reason"]
+        self.assertIn(str(state), reason)
+        self.assertNotIn(str(self.fallback), reason)
+        self.assertTrue(state.with_suffix(".nudged").exists())
+
+    def test_thread_id_is_not_needed_and_its_send_step_is_absent(self):
+        write_transcript(self.transcript, [usage_line(300000)])
+        payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=False)
+        code, out = run_hook(payload, "Stop", "--host", "cli", env={"T3CODE_THREAD_ID": THREAD})
+        self.assertNotIn("t3_thread_send", json.loads(out)["reason"])
+
+    def test_silent_cases(self):
+        self.assertEqual(self.stop(tokens=249999), (0, ""))
+        self.assertEqual(self.stop(agent_id="agent-1"), (0, ""))
+        self.assertEqual(self.stop(session_id="../x"), (0, ""))
+        plain = Path(self.tmp.name) / "plain"
+        plain.mkdir()
+        self.assertEqual(self.stop(cwd=str(plain)), (0, ""))
+        self.assertFalse(self.fallback.with_suffix(".nudged").exists())
+        write_transcript(self.transcript, [usage_line(300000)])
+        self.assertEqual(self.run_cli("Stop", transcript_path=str(self.transcript), stop_hook_active=True), (0, ""))
+
+    def test_nudges_once_until_a_compaction_even_without_a_file(self):
+        self.assertEqual(json.loads(self.stop()[1])["decision"], "block")
+        self.assertEqual(self.stop(), (0, ""))
+        self.assertEqual(self.run_cli("SessionStart", source="compact"), (0, ""))
+        self.assertEqual(json.loads(self.stop()[1])["decision"], "block")
+
+    def test_pre_compact_without_a_file_is_silent(self):
+        self.assertEqual(self.run_cli("PreCompact", trigger="manual"), (0, ""))
+
+    def test_file_in_the_home_fallback_is_used_by_every_event(self):
+        self.fallback.parent.mkdir(parents=True)
+        self.fallback.write_text(f"Updated: 2026-11-22T10:00:00Z\nPlan: {self.plan}\nMilestone: HOME\n", encoding="utf-8")
+        self.assertIn(str(self.fallback), self.run_cli("PreCompact", trigger="manual")[1])
+        self.assertIn(str(self.fallback), json.loads(self.stop()[1])["reason"])
+        code, out = self.run_cli("SessionStart", source="compact")
+        text = json.loads(out)["hookSpecificOutput"]["additionalContext"]
+        self.assertTrue(text.startswith("Live state restored after compaction"), text[:80])
+        self.assertIn("Milestone: HOME", text)
+        self.assertIn("- built M2", text)
+        self.assertFalse(self.fallback.with_suffix(".nudged").exists())
 
 
 if __name__ == "__main__":

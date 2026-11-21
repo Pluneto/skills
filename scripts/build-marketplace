@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate .claude-plugin/marketplace.json from plugins/*/, and each
-plugin.json's `skills` list from its skills/ folders (Codex needs the list).
-A plugin without skills (plugins/experimental between tests) is left out.
+plugin.json's `skills` list from its skills/ folders (Codex needs the list;
+a hooks-only plugin gets no list). A plugin with neither skills nor
+hooks/hooks.json (plugins/experimental between tests) is left out.
 
 Fails (exit 1) if a plugin or skill is malformed or contains a symlink, and
 then writes nothing. With --check, writes nothing either way and fails when a
@@ -31,9 +32,10 @@ def frontmatter_keys(text):
 
 
 def published_plugins():
-    """Plugin folders that hold at least one skills/<name>/ folder."""
+    """Plugin folders that hold at least one skills/<name>/ folder or a hooks/hooks.json."""
     return sorted(p for p in (ROOT / "plugins").glob("*")
-                  if p.is_dir() and any(s.is_dir() for s in (p / "skills").glob("*")))
+                  if p.is_dir() and (any(s.is_dir() for s in (p / "skills").glob("*"))
+                                     or (p / "hooks" / "hooks.json").is_file()))
 
 
 def check_plugin(plugin_dir):
@@ -59,13 +61,16 @@ def check_plugin(plugin_dir):
 
 
 def plugin_manifest(plugin_dir):
-    """(path, expected text, marketplace entry) for one plugin."""
+    """(path, expected text, marketplace entry) for one plugin; a plugin without skills gets no `skills` key."""
     manifest_path = plugin_dir / ".claude-plugin" / "plugin.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("name") != plugin_dir.name:
         raise ValueError(f"{plugin_dir.name}: plugin.json name must match the folder name")
-    manifest["skills"] = [f"./skills/{p.name}" for p in sorted((plugin_dir / "skills").glob("*"))
-                          if (p / "SKILL.md").is_file()]
+    skills = [f"./skills/{p.name}" for p in sorted((plugin_dir / "skills").glob("*")) if (p / "SKILL.md").is_file()]
+    if skills:
+        manifest["skills"] = skills
+    else:
+        manifest.pop("skills", None)
     entry = {
         "name": plugin_dir.name,
         "source": f"./plugins/{plugin_dir.name}",

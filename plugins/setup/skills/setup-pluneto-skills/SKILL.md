@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # Set up or repair pluneto-skills in this repo
 
-The `pluneto-skills` marketplace (`Pluneto/skills`) has these plugins: `workflow`, `engineering`, `skill-tools`, `design`, `t3code` (T3 Code only; it depends on `workflow`), and `setup` (this skill, installed at user scope). Read the current list from `.claude-plugin/marketplace.json` in the marketplace's install location (`claude plugin marketplace list --json`) rather than trusting this line.
+The `pluneto-skills` marketplace (`Pluneto/skills`) has these plugins: `workflow`, `engineering`, `skill-tools`, `design`, `t3code` (T3 Code only; it depends on `workflow`), `cli-host` (compaction hooks for the plain Claude Code CLI, installed at user scope by hand: leave it out of the step 2 choice), and `setup` (this skill, installed at user scope). Read the current list from `.claude-plugin/marketplace.json` in the marketplace's install location (`claude plugin marketplace list --json`) rather than trusting this line.
 
 **Mode:** the argument, if given. Otherwise **repair** when the repo's `.claude/settings.json` already enables a `*@pluneto-skills` plugin, else **setup**. State the mode you picked.
 

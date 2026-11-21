@@ -9,10 +9,10 @@ then the repo's own checks:
 - every skill copied from mattpocock/skills keeps its LICENSE
 - every skill is named in the which-skill router (as a whole word), except
   those of host and staging plugins (UNROUTED), which the router must not name
-- a plugin without skills (plugins/experimental between tests) is skipped
+- a plugin with neither skills nor hooks/hooks.json (plugins/experimental between tests) is skipped
 - the generated marketplace files are current (scripts/build-marketplace --check)
 - t3code dispatch's Main health command passes its fixtures (scripts/test-main-health)
-- t3code's compaction hooks and replay script pass their unit tests (plugins/t3code/hooks, plugins/t3code/evals)
+- the compaction hooks (both hosts) and the replay script pass their unit tests (plugins/t3code/hooks, plugins/t3code/evals)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
 - the workflow plugin names no host (HOST_TERMS): host rules live in a host plugin
@@ -41,6 +41,7 @@ PAIRED = [
      "plugins/design/skills/ui-craft/contract.md"],
     ["plugins/workflow/skills/to-tickets/no-tracker-doc.md", "plugins/workflow/skills/wayfinder/no-tracker-doc.md",
      "plugins/workflow/skills/build-this/no-tracker-doc.md"],
+    ["plugins/t3code/hooks/compact_context.py", "plugins/cli-host/hooks/compact_context.py"],
 ]
 # Design skills return Open questions instead of asking (docs/design-contract.md).
 NO_ASKING = re.compile(r"AskUserQuestion|question tool|ask the user|ask which|ask only", re.I)
@@ -161,7 +162,8 @@ def repo_problems():
 
 def main():
     plugins = sorted(p for p in (ROOT / "plugins").glob("*")
-                     if p.is_dir() and any(s.is_dir() for s in (p / "skills").glob("*")))
+                     if p.is_dir() and (any(s.is_dir() for s in (p / "skills").glob("*"))
+                                        or (p / "hooks" / "hooks.json").is_file()))
     failed = False
     for target in [ROOT] + plugins:
         found = cli_problems(target)

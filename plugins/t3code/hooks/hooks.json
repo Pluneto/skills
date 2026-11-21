@@ -3,7 +3,7 @@
     "PreCompact": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" PreCompact", "timeout": 10 }
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" PreCompact --host t3", "timeout": 10 }
         ]
       }
     ],
@@ -11,14 +11,14 @@
       {
         "matcher": "compact",
         "hooks": [
-          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" SessionStart", "timeout": 10 }
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" SessionStart --host t3", "timeout": 10 }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" Stop", "timeout": 10 }
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact_context.py\" Stop --host t3", "timeout": 10 }
         ]
       }
     ]

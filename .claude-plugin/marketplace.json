@@ -7,6 +7,11 @@
   "description": "Pluneto's agent skills: plan and build workflows, engineering practice, skill authoring, design and UX reviews.",
   "plugins": [
     {
+      "name": "cli-host",
+      "source": "./plugins/cli-host",
+      "description": "Plain Claude Code CLI host hooks: past 250k tokens of context, the agent saves its live-state file and ends its turn with a /compact line for the user to run; the summary rules and the state re-injection after a compaction work as in t3code."
+    },
+    {
       "name": "design",
       "source": "./plugins/design",
       "description": "Design skills that fit the workflow plugin: product-context (who it is for), design-review (shape and critique) and ui-craft (build the UI)."
