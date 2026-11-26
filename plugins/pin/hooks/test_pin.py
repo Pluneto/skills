@@ -49,7 +49,7 @@ class PinTestCase(unittest.TestCase):
 
     def pinned_text(self):
         (path,) = self.pin_files()
-        return path.read_text(encoding="utf-8")
+        return path.read_bytes().decode("utf-8")
 
 
 class CaptureAndReinject(PinTestCase):
@@ -60,6 +60,15 @@ class CaptureAndReinject(PinTestCase):
         injected = self.compact()
         self.assertTrue(injected.endswith("\n\n" + rules))
         self.assertIn("the user set these instructions earlier in this thread", injected.splitlines()[0])
+
+    def test_a_message_that_starts_with_a_slash_command_can_pin(self):
+        self.submit("/some-skill with args\n#pin\nrule")
+        self.assertEqual(self.pinned_text(), "rule")
+
+    def test_crlf_line_ends_do_not_leave_a_stray_carriage_return_at_the_ends(self):
+        self.submit("task\r\n#pin\r\nfirst\r\nsecond\r\n")
+        self.assertEqual(self.pinned_text(), "first\r\nsecond")
+        self.assertTrue(self.compact().endswith("\n\nfirst\r\nsecond"))
 
     def test_text_above_the_marker_is_not_pinned(self):
         self.submit("task text\n#pin\nrule")
@@ -81,6 +90,7 @@ class CaptureAndReinject(PinTestCase):
     def test_the_capturing_turn_tells_the_agent_what_was_stored(self):
         note = self.submit("#pin\nrule one\nrule two")
         self.assertIn("2 lines", note)
+        self.assertIn("rule one", note)
         self.assertIn("one line", note)
 
     def test_non_compact_session_start_injects_nothing(self):
@@ -95,6 +105,10 @@ class AddAndClear(PinTestCase):
         self.submit("more\n#pin\nsecond rule")
         self.assertEqual(self.pinned_text(), "first rule\n\nsecond rule")
         self.assertTrue(self.compact().endswith("first rule\n\nsecond rule"))
+
+    def test_a_second_marker_in_one_message_keeps_the_text_in_between(self):
+        self.submit("#pin\nfirst\n#pin\nsecond")
+        self.assertEqual(self.pinned_text(), "first\nsecond")
 
     def test_unpin_clears_the_pin_and_says_so(self):
         self.submit("#pin\nrule")
@@ -137,6 +151,13 @@ class Budget(PinTestCase):
         self.assertTrue(injected.endswith(pin))
         self.assertNotIn("cut", injected.lower())
 
+    def test_a_pin_one_unit_over_the_budget_is_cut(self):
+        pin = "a" * (self.room() + 1)
+        self.submit(f"#pin\n{pin}", session_id="over")
+        injected = self.compact(session_id="over")
+        self.assertLessEqual(utf16_len(injected), LIMIT)
+        self.assertIn("cut", injected.lower())
+
     def test_a_longer_pin_is_cut_with_a_note_and_the_file_path(self):
         pin = "".join(f"rule {n}\n" for n in range(3000)).strip()
         self.submit(f"#pin\n{pin}")
@@ -146,7 +167,7 @@ class Budget(PinTestCase):
         self.assertIn("cut", injected.lower())
         self.assertIn(str(path), injected)
         self.assertIn("rule 0\nrule 1\nrule 2\n", injected)
-        self.assertEqual(path.read_text(encoding="utf-8"), pin)
+        self.assertEqual(path.read_bytes().decode("utf-8"), pin)
 
     def test_the_budget_counts_utf16_code_units_so_emoji_count_twice(self):
         pin = "\U0001F600" * 6000
@@ -155,7 +176,8 @@ class Budget(PinTestCase):
         self.assertLessEqual(utf16_len(injected), LIMIT)
         self.assertGreater(len(injected), 1000)
         self.assertIn("cut", injected.lower())
-        injected.encode("utf-8")
+        self.assertIn("\U0001F600" * 100, injected)
+        self.assertTrue(pin.startswith(injected.split("\n\n", 1)[1]))
 
 
 class WhoseThread(PinTestCase):
@@ -209,6 +231,11 @@ class NeverFailsTheSession(PinTestCase):
         env = {**self.env, "CLAUDE_PLUGIN_DATA": str(blocker / "data")}
         self.assertIsNone(self.submit("#pin\nrule", env=env))
         self.assertIsNone(self.compact(env=env))
+
+    def test_hook_input_without_any_thread_key_pins_nothing(self):
+        out = self.run_hook({"hook_event_name": "UserPromptSubmit", "prompt": "#pin\nrule"})
+        self.assertEqual(out, "")
+        self.assertEqual(self.pin_files(), [])
 
     def test_a_missing_data_folder_variable_prints_nothing(self):
         env = {k: v for k, v in self.env.items() if k != "CLAUDE_PLUGIN_DATA"}

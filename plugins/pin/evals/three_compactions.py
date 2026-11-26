@@ -30,7 +30,6 @@ throwaway git repository and its own session transcript under the config dir.
 Requires python3 (stdlib only), git and the claude CLI, with credentials in CLAUDE_CONFIG_DIR.
 """
 import argparse
-import hashlib
 import importlib.util
 import json
 import os
@@ -76,10 +75,6 @@ def load_pin_module():
 
 def utf16_units(text):
     return len(text.encode("utf-16-le")) // 2
-
-
-def thread_key_digest(thread_id):
-    return hashlib.sha256(thread_id.encode("utf-8")).hexdigest()
 
 
 # ---------- reading Claude Code's own record ----------
@@ -152,7 +147,7 @@ class Trial:
         subprocess.run(["git", "init", "-q", str(self.cwd)], check=True)
         self.capture = out / "stream.jsonl"
         self.pin_data = self.config / "plugins" / "data" / PIN_DATA_NAME
-        self.pin_file = self.pin_data / f"{thread_key_digest(self.thread_id)}.txt"
+        self.pin_file = self.pin_data / load_pin_module().pin_file_name(self.thread_id)
         self.transcript = self.config / "projects" / project_slug(self.cwd) / f"{self.session_id}.jsonl"
         self.turns = []
         env = dict(os.environ, CLAUDE_CONFIG_DIR=str(self.config), CLAUDE_CODE_ENTRYPOINT="t3-code",

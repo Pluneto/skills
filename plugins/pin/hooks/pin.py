@@ -19,15 +19,25 @@ PIN_MARKER = re.compile(r"^[ \t]*#pin[ \t]*\r?$", re.I)
 UNPIN_MARKER = re.compile(r"^[ \t]*#unpin[ \t]*\r?$", re.I)
 
 HEADER = "Pinned instructions: the user set these instructions earlier in this thread and they are re-attached unchanged after the compaction."
-CUT_NOTE = "The pin is cut here to fit the limit for hook output; the full text is in {path}."
-CLEARED_NOTE ="The pin hook cleared this thread's pinned instructions because the user message has an #unpin line."
-STORED_NOTE = ("The pin hook stored the {lines} lines below the #pin line of this user message. "
+CUT_NOTE = "The pin below is cut to fit the limit for hook output; the full text is in {path}."
+CLEARED_NOTE = "The pin hook cleared this thread's pinned instructions because the user message has an #unpin line."
+STORED_NOTE = ("The pin hook stored the {lines} lines below the #pin line of this user message, starting with: {start!r}. "
                "The user expects one line in your reply that confirms the instructions are pinned.")
 
 
+def pin_file_name(key):
+    return f"{hashlib.sha256(key.encode('utf-8')).hexdigest()}.txt"
+
+
 def pin_path(data):
-    key = os.environ.get("T3CODE_THREAD_ID") or data.get("session_id") or ""
-    return Path(os.environ["CLAUDE_PLUGIN_DATA"]) / f"{hashlib.sha256(key.encode('utf-8')).hexdigest()}.txt"
+    """The pin file of this thread, or None when the hook input names no thread."""
+    key = os.environ.get("T3CODE_THREAD_ID") or data.get("session_id")
+    return Path(os.environ["CLAUDE_PLUGIN_DATA"]) / pin_file_name(key) if key else None
+
+
+def read_pin(path):
+    """Bytes in, bytes out: text mode would turn a pinned CRLF into LF."""
+    return path.read_bytes().decode("utf-8")
 
 
 def apply_message(stored, prompt):
@@ -42,7 +52,7 @@ def apply_message(stored, prompt):
             capturing = True
         elif capturing:
             block.append(line)
-    added = "\n".join(block).strip("\n")
+    added = "\n".join(block).strip("\r\n")
     return (f"{stored}\n\n{added}" if stored and added else stored or added), added, cleared
 
 
@@ -51,18 +61,18 @@ def context(event, text):
 
 
 def on_prompt(data, path):
-    stored = path.read_text(encoding="utf-8") if path.is_file() else ""
+    stored = read_pin(path) if path.is_file() else ""
     pin, added, cleared = apply_message(stored, data.get("prompt") or "")
     if not added and not cleared:
         return ""
     if pin:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(pin, encoding="utf-8")
+        path.write_bytes(pin.encode("utf-8"))
     else:
         path.unlink(missing_ok=True)
     notes = [CLEARED_NOTE] if cleared else []
     if added:
-        notes.append(STORED_NOTE.format(lines=len(added.split("\n"))))
+        notes.append(STORED_NOTE.format(lines=len(added.split("\n")), start=added.split("\n")[0][:80]))
     return context("UserPromptSubmit", " ".join(notes))
 
 
@@ -91,7 +101,7 @@ def inject_text(pin, path):
 def on_session_start(data, path):
     if data.get("source", "compact") != "compact" or not path.is_file():
         return ""
-    return context("SessionStart", inject_text(path.read_text(encoding="utf-8"), path))
+    return context("SessionStart", inject_text(read_pin(path), path))
 
 
 HANDLERS = {"UserPromptSubmit": on_prompt, "SessionStart": on_session_start}
@@ -100,7 +110,8 @@ HANDLERS = {"UserPromptSubmit": on_prompt, "SessionStart": on_session_start}
 def main():
     data = json.loads(sys.stdin.read() or "{}")
     handler = HANDLERS.get(data.get("hook_event_name"))
-    return handler(data, pin_path(data)) if handler and not data.get("agent_id") else ""
+    path = pin_path(data) if handler and not data.get("agent_id") else None
+    return handler(data, path) if path else ""
 
 
 if __name__ == "__main__":
