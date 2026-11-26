@@ -12,7 +12,7 @@ then the repo's own checks:
 - a plugin with neither skills nor hooks/hooks.json (plugins/experimental between tests) is skipped
 - the generated marketplace files are current (scripts/build-marketplace --check)
 - t3code dispatch's Main health command passes its fixtures (scripts/test-main-health)
-- the compaction hooks (both hosts) and the replay script pass their unit tests (plugins/t3code/hooks, plugins/t3code/evals)
+- the compaction hooks (both hosts), the replay script and the pin hook pass their unit tests (plugins/t3code/hooks, plugins/t3code/evals, plugins/pin/hooks)
 - files kept as identical copies in several skills (PAIRED) still match
 - no design skill tells the agent to question the user itself (NO_ASKING)
 - the workflow plugin names no host (HOST_TERMS): host rules live in a host plugin
@@ -134,11 +134,11 @@ def repo_problems():
         run = subprocess.run([sys.executable, str(ROOT / "scripts" / test)], capture_output=True, text=True)
         if run.returncode != 0:
             found.append((run.stderr + run.stdout).strip())
-    for folder in ("hooks", "evals"):
-        tests = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "plugins" / "t3code" / folder)],
+    for plugin, folder in (("t3code", "hooks"), ("t3code", "evals"), ("pin", "hooks")):
+        tests = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "plugins" / plugin / folder)],
                                capture_output=True, text=True)
         if tests.returncode != 0:
-            found.append(f"t3code {folder} tests failed:\n" + tests.stderr.strip())
+            found.append(f"{plugin} {folder} tests failed:\n" + tests.stderr.strip())
     for group in PAIRED:
         texts = {rel: (ROOT / rel).read_bytes() if (ROOT / rel).is_file() else None for rel in group}
         if None in texts.values() or len(set(texts.values())) > 1:

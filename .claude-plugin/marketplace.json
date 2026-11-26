@@ -22,6 +22,11 @@
       "description": "Engineering practice: tdd, diagnosing-bugs, review-changes, pr, prototype, and codebase design and domain modelling (codebase-design, improve-codebase-architecture, domain-modeling). Adapted from mattpocock/skills (MIT)."
     },
     {
+      "name": "pin",
+      "source": "./plugins/pin",
+      "description": "Thread pin: a line that is exactly #pin pins the rest of that message word for word, and the pinned text is re-injected after every compaction of that thread. #unpin clears it."
+    },
+    {
       "name": "setup",
       "source": "./plugins/setup",
       "description": "Set up or repair the pluneto-skills plugins in a repo (/setup:setup-pluneto-skills). Install once at user scope."
