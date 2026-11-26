@@ -63,7 +63,7 @@ considered `skill-tools:writing-for-agents`, skipped: it shapes the injected wor
 
 ## Steps
 
-### Milestone 1: the `pin` plugin, built and proven
+### Milestone 1: the `pin` plugin, built and proven (done, PR open)
 
 **Outcome:** `plugins/pin` exists in `Pluneto/skills` on a branch with an open PR. A message with a `#pin` line stores the text below it, and after each compaction the session gets that text back unchanged.
 
@@ -122,6 +122,11 @@ considered `skill-tools:writing-for-agents`, skipped: the injected text is two f
 - The report to the user gives the usage line: put `#pin` on its own line above the instructions; `#unpin` clears them.
 
 **Skills:** none fit.
+
+## Build log
+
+- Build gate (before M1): pass - in a T3-style session `UserPromptSubmit` delivers the raw message (multi-line, and starting with a skill or unknown slash command); built-in `/compact` and `/help` never reach it; `SessionStart` fires with source `compact` after `/compact`.
+- M1 the `pin` plugin, built and proven (orchestrator, with sonnet sub-agents for the trial and the review): check pass - 30 unit tests and `scripts/validate` green; three-compaction run byte-exact at 3 boundaries (manual, manual, auto), combined run with `t3code` complete (6,240 + 6,259 units, sum 12,499); PR #33 open, not merged; deviations: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` works, `autoCompactWindow` or its env twin below 100,000 does not, so the trial sets window 100,000 plus a 20% override with no MCP servers; the trial also loads `workflow` because `t3code` depends on it; pin files are written and read as bytes so CRLF survives; owed: milestone 2 (merge, config-owner prompt, real-thread check)
 
 ## Risks and assumptions
 
