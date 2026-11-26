@@ -1,0 +1,11 @@
+{
+  "name": "pin",
+  "version": "1.0.0",
+  "description": "Thread pin: a line that is exactly #pin pins the rest of that message word for word, and the pinned text is re-injected after every compaction of that thread. #unpin clears it.",
+  "author": {
+    "name": "Pluneto"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Pluneto/skills",
+  "repository": "https://github.com/Pluneto/skills"
+}

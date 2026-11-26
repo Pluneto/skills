@@ -1,6 +1,6 @@
 # pluneto-skills
 
-An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`), with two exceptions: `t3code` and `cli-host` also ship compaction hooks (one Python 3 script, copied into both, no dependencies). No MCP servers or binaries.
+An agent-skills marketplace: plan-then-build workflows, engineering practice, skill authoring, and design and UX reviews. Built for Claude Code; the same files install in Codex, GitHub Copilot and, through skills.sh, other agents. Every plugin is plain Markdown instructions (plus a bash template in `wizard`), with these exceptions: `t3code` and `cli-host` also ship compaction hooks (one Python 3 script, copied into both, no dependencies), and `pin` is a hooks-only plugin (one Python 3 script, no dependencies). No MCP servers or binaries.
 
 ## Plugins
 
@@ -9,6 +9,7 @@ An agent-skills marketplace: plan-then-build workflows, engineering practice, sk
 | `workflow` | plan-this, interview, build-this, research-this, review-this, use-available-skills, wayfinder, to-tickets, to-questionnaire, wizard, handoff, which-skill. Host-neutral: any repo, any harness, code or not | per project |
 | `t3code` | t3-orchestration, dispatch (`/dispatch`). Only for [T3 Code](https://github.com/t3dotgg/t3code); depends on `workflow`, which installs with it | per project or user scope, on T3 Code |
 | `cli-host` | No skills: compaction hooks for the plain Claude Code CLI. Past 250k tokens of context, the agent saves its live-state file and ends its turn with a `/compact <focus>` line for you to run (no hook can start `/compact` itself); after the compaction its state is re-injected. Set `autoCompactWindow` above 250k (350000 works) so the nudge comes first | user scope, on the plain CLI (not on T3 Code) |
+| `pin` | No skills: a thread pin that survives compaction. Put `#pin` alone on a line above the instructions you want kept (`#PIN` works too): the rest of that message is stored word for word and re-injected after every manual or automatic compaction of that thread, with a note when it is cut at 9,500 characters. A later `#pin` adds below the first; `#unpin` alone on a line clears it. Example: `Build the login page.` then `#pin`, then `No code comments.` Claude Code only; native sub-agents get no pin; a forked thread starts without one | user scope, any Claude Code host |
 | `engineering` | tdd, diagnosing-bugs, review-changes, pr, prototype, codebase-design, improve-codebase-architecture, domain-modeling | per project |
 | `skill-tools` | writing-for-agents, skill-updater, skill-ozempic, reflect | per project |
 | `design` | product-context, design-review, ui-craft | per project |
