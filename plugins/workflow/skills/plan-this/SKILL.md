@@ -47,7 +47,7 @@ Around it:
 
 ## 3. The plan survived an outside read and the user's confirmation
 
-- **Independent review.** With **review-this** available, ask on its own whether another model should review the plan before the user confirms it (recommend yes; unattended, run it). Write the draft in the Saving format to `plan.md` in a fresh `mktemp -d` and pass it as an explicit plan target with the user's original request as the intent. Verify its report before trusting it. A finding that needs a decision goes back to the interview for that branch only. A fix that adds work the accepted goal doesn't need is scope creep: undo it. At most two reviews; what stays open goes under Risks.
+- **Independent review.** With **review-this** available, have another model review the plan before the user confirms it, without asking; skip it only when the user said to. Write the draft in the Saving format to `plan.md` in a fresh `mktemp -d` and pass it as an explicit plan target with the user's original request as the intent. Verify its report before trusting it. A finding that needs a decision goes back to the interview for that branch only. A fix that adds work the accepted goal doesn't need is scope creep: undo it. At most two reviews; what stays open goes under Risks.
 - **Confirmation.** Summarise in plain, scannable language: the deepened goal, every decision with its choice, the milestones with their checks and skills, how success is checked overall, the main risks, and what the review changed. Ask "Does this match what you want?" as the only question in its call. Any change, however small, reopens the affected branches and then this summary. Only a plain yes moves on.
 
 ## 4. The user chose what happens next
