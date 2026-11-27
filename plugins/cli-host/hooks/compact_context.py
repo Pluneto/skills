@@ -11,7 +11,11 @@ Hosts (plugins/t3code and plugins/cli-host ship identical copies; each hooks.jso
   t3 (default)  T3 Code: only a thread (T3CODE_THREAD_ID, not a delegated task) with a live-state file is
                 nudged, and the agent queues `/compact` to its own thread with t3_thread_send.
   cli           plain Claude Code: every main session in a git repository is nudged; the agent writes its
-                live-state file (creating it if needed) and ends its turn with a `/compact` line the user runs.
+                live-state file (creating it if needed) and ends its turn with a `/compact` line. On that turn's
+                second Stop, inside tmux, the hook types the line into its own pane (then, with `Resume: yes` in
+                the file, a labelled continue prompt) when every check passes: the pane's process is the only
+                `claude` above the hook, the input box is empty, the focus is one short plain line. Otherwise the
+                user runs the line.
 
 The live-state file is `<common git dir>/live-state/<session_id>.md`, found from the hook's cwd. The common
 dir is shared by all worktrees of a repository, so the file survives a worktree that is removed and recreated;
@@ -19,13 +23,15 @@ a file in the worktree's own git dir (where 1.1.0 kept it) is still found. On th
 the file is `~/.claude/live-state/<session_id>.md` (for sessions that can't write the git dir).
 Every branch is a silent no-op outside a git repository, for a native sub-agent (`agent_id`), and on any
 error; PreCompact and SessionStart also without the file, and Stop too on the t3 host.
-Marker of a given nudge: `<session_id>.nudged` next to the file, cleared after a compaction.
+Markers next to the file, cleared after a compaction: `<session_id>.nudged` (this nudge was given) and, on the cli
+host, `<session_id>.queued` (its line was typed, so it is typed once).
 """
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 NUDGE_TOKENS = 250000          # context size at which Stop asks for a compaction; auto-compact (window 350000) follows at ~317k
@@ -37,6 +43,10 @@ UPDATED_CHARS = 80             # header fields are cut too, so the header always
 PLAN_PATH_CHARS = 1000
 TAIL_CHUNK = 64 * 1024         # first read from the end of the transcript; doubles until a usage line is found
 SAFE_SESSION_ID = re.compile(r"^[\w.-]+$")
+MAX_FOCUS_CHARS = 300          # longest /compact focus the hook types
+ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")  # CSI escapes, stripped to read the screen as plain text
+ENTER_DELAY = 0.4              # seconds between a typed line and its Enter, so the TUI doesn't read one paste
+TMUX_TIMEOUT = 1               # seconds per tmux call: 6 calls + 2 Enter delays stay under the hook's 10 s timeout
 
 PRECOMPACT_TEXT = """\
 The orchestrator's live-state file {path} is re-attached after this compaction, so the summary need not copy it. When writing the summary:
@@ -51,12 +61,16 @@ Context is {tokens} tokens: compact now, at this turn boundary. Do these in orde
 3. End your turn with no further tool calls."""
 
 STOP_TEXT_CLI = """\
-Context is {tokens} tokens: compact now, at this turn boundary. Only the user can start a compaction, so do these in order and nothing else:
-1. Write the live-state file {path} (create it, and its folder, if missing) so it holds everything you still need: first line `Updated: <current UTC time>`, second line `Plan: <plan file path, or none>`, then short facts: the user's rules from this chat, open questions, the current step and the next action. Only its first 9,000 characters come back after the compaction: put the facts you act on first.
-2. Reply in one short message: ask the user to run the line that follows, then make your last line exactly `/compact ` followed by a one-line focus (the plan or task, the current step, your next action). End your turn there, with no further tool calls."""
+Context is {tokens} tokens: compact now, at this turn boundary. Do these in order and nothing else:
+1. Write the live-state file {path} (create it, and its folder, if missing) so it holds everything you still need: first line `Updated: <current UTC time>`, second line `Plan: <plan file path, or none>`, third line `Resume: yes` when your next action needs no answer from the user, else `Resume: no`, then short facts: the user's rules from this chat, open questions, the current step and the next action. Only its first 9,000 characters come back after the compaction: put the facts you act on first.
+2. Reply in one short message whose last line is exactly `/compact ` followed by a one-line focus (the plan or task, the current step, your next action), and end your turn there, with no further tool calls. When it can, the hook runs it itself, so above that line tell the user only to run it if the compaction does not start."""
+
+RESUME_PROMPT = ("[auto-resume after compaction - not a new instruction from the user] "
+                 "Continue with the next action in the live-state file.")
 
 SYSTEM_MESSAGE_CLI = ("Context is {tokens} tokens. The agent is saving its state and will end its turn with a "
-                      "/compact line: run it to compact before auto-compact cuts in mid-task.")
+                      "/compact line. Inside tmux, with nothing typed in the input box, it runs on its own; "
+                      "otherwise run it to compact before auto-compact cuts in mid-task.")
 
 
 def git_dirs(cwd):
@@ -193,6 +207,8 @@ def on_session_start(data, host, state, marker):
     if data.get("source", "compact") != "compact":
         return ""
     marker.unlink(missing_ok=True)
+    if host == "cli":
+        marker.with_suffix(".queued").unlink(missing_ok=True)
     if not state.is_file():
         return ""
     return json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart",
@@ -202,6 +218,9 @@ def on_session_start(data, host, state, marker):
 def on_stop(data, host, state, marker):
     thread = os.environ.get("T3CODE_THREAD_ID", "")
     on_t3 = host != "cli"
+    if not on_t3 and data.get("stop_hook_active") and marker.exists():
+        auto_compact(data, state, marker)
+        return ""
     if data.get("stop_hook_active") or marker.exists() or (
             on_t3 and (not thread or thread.startswith("thread:delegated-task:"))):
         return ""
@@ -214,6 +233,129 @@ def on_stop(data, host, state, marker):
         return json.dumps({"decision": "block", "reason": STOP_TEXT.format(tokens=tokens, path=state, thread=thread)})
     return json.dumps({"decision": "block", "reason": STOP_TEXT_CLI.format(tokens=tokens, path=state),
                        "systemMessage": SYSTEM_MESSAGE_CLI.format(tokens=tokens)})
+
+
+def last_compact_line(data):
+    """The `/compact <focus>` last line of the turn's final assistant message (from the Stop input, else the newest
+    main-thread assistant entry of the transcript), or None when it is missing or unsafe to type."""
+    message = data.get("last_assistant_message")
+    if message is None:
+        message = last_assistant_text(data.get("transcript_path") or "")
+    lines = (message or "").strip().splitlines()
+    line = lines[-1].strip() if lines else ""
+    focus = line[len("/compact "):].strip() if line.startswith("/compact ") else ""
+    if not focus or len(focus) > MAX_FOCUS_CHARS or any(ord(c) < 32 or 127 <= ord(c) < 160 for c in focus):
+        return None
+    return "/compact " + focus
+
+
+def last_assistant_text(transcript_path):
+    with open(transcript_path, "rb") as handle:
+        lines = handle.read().split(b"\n")
+    for raw in reversed(lines):
+        if b'"assistant"' not in raw:
+            continue
+        try:
+            entry = json.loads(raw)
+        except ValueError:
+            continue
+        if entry.get("type") != "assistant" or entry.get("isSidechain"):
+            continue
+        content = (entry.get("message") or {}).get("content")
+        if isinstance(content, str):
+            return content
+        text = "".join(block.get("text") or "" for block in content or [] if block.get("type") == "text")
+        if text:
+            return text
+    return ""
+
+
+def tmux(*args):
+    return subprocess.run(["tmux", *args], check=True, capture_output=True, text=True, timeout=TMUX_TIMEOUT).stdout
+
+
+def comm_and_parent(pid):
+    """(comm, parent pid) of a running process, from /proc/<pid>/stat."""
+    stat = Path(f"/proc/{pid}/stat").read_text(errors="replace")
+    comm = stat[stat.index("(") + 1:stat.rindex(")")]
+    return comm, int(stat[stat.rindex(")") + 2:].split()[1])
+
+
+def own_pane(pane):
+    """True when the pane is not in copy mode (keys would go there) and this hook runs under exactly one `claude`
+    process between itself and the pane's process (so a nested `claude -p` can't type into its parent's pane).
+    comm, since exe resolves to .../versions/<ver>."""
+    pid_text, in_mode = tmux("display-message", "-p", "-t", pane, "#{pane_pid} #{pane_in_mode}").split()
+    if in_mode != "0":
+        return False
+    pane_pid = int(pid_text)
+    claudes, pid = 0, os.getppid()
+    while pid > 1:
+        comm, parent = comm_and_parent(pid)
+        claudes += comm == "claude"
+        if pid == pane_pid:
+            return claudes == 1
+        pid = parent
+    return False
+
+
+def input_empty(pane):
+    """True when the pane shows Claude Code's input box with no draft in it and no queued user message: every line
+    from the last `❯` down to the box's bottom border holds only whitespace or dim text (the placeholder)."""
+    screen = tmux("capture-pane", "-p", "-e", "-t", pane).splitlines()
+    plain = [ANSI.sub("", line) for line in screen]
+    if any("Queued \u00b7" in line or "queued messages" in line for line in plain):
+        return False
+    starts = [i for i, line in enumerate(plain) if "\u276f" in line]
+    if not starts:
+        return False
+    box = [screen[starts[-1]].split("\u276f", 1)[1]]
+    for raw, line in zip(screen[starts[-1] + 1:], plain[starts[-1] + 1:]):
+        if line.lstrip().startswith("\u2500"):
+            break
+        box.append(raw)
+    return not any(undimmed_text(line) for line in box)
+
+
+def undimmed_text(line):
+    """Whether the line shows any non-blank character outside SGR dim (ESC[2m ... ESC[0m / ESC[22m / ESC[m)."""
+    dim = False
+    for escape, text in re.findall(r"(\x1b\[[0-9;]*m)|([^\x1b]+|\x1b)", line):
+        if escape:
+            codes = escape[2:-1].split(";")
+            while codes:
+                code = codes.pop(0)
+                if code in ("38", "48", "58"):  # extended colour: skip `5;n` (256 colours) or `2;r;g;b` (RGB)
+                    del codes[:{"5": 2, "2": 4}.get(codes[0] if codes else "", 0)]
+                elif code == "2":
+                    dim = True
+                elif code in ("", "0", "22"):
+                    dim = False
+        elif not dim and text.replace("\u00a0", " ").strip():
+            return True
+    return False
+
+
+def type_line(pane, text):
+    tmux("send-keys", "-t", pane, "-l", text)
+    time.sleep(ENTER_DELAY)
+    tmux("send-keys", "-t", pane, "Enter")
+
+
+def auto_compact(data, state, marker):
+    """Second Stop of a nudged turn on the cli host: type the agent's /compact line into its own tmux pane,
+    then, when its live-state file says `Resume: yes`, the labelled continue prompt (Claude Code runs both in order)."""
+    queued = marker.with_suffix(".queued")
+    pane = os.environ.get("TMUX_PANE", "")
+    line = last_compact_line(data)
+    if queued.exists() or not pane or not line or not own_pane(pane) or not input_empty(pane):
+        return
+    third = state.read_text(errors="replace").splitlines()[2:3] if state.is_file() else []
+    resume = [line.strip() for line in third] == ["Resume: yes"]  # only the third line counts; missing or other = no
+    queued.write_text(line)
+    type_line(pane, line)
+    if resume:
+        type_line(pane, RESUME_PROMPT)
 
 
 HANDLERS = {"PreCompact": on_pre_compact, "SessionStart": on_session_start, "Stop": on_stop}

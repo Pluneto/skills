@@ -1,6 +1,6 @@
 {
   "name": "t3code",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "T3 Code host skills on top of workflow: t3-orchestration (child agents, threads, waiting) and dispatch (parallel workers on a repo's tickets).",
   "author": {
     "name": "Pluneto"

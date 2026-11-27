@@ -1,7 +1,7 @@
 {
   "name": "cli-host",
-  "version": "1.0.0",
-  "description": "Plain Claude Code CLI host hooks: past 250k tokens of context, the agent saves its live-state file and ends its turn with a /compact line for the user to run; the summary rules and the state re-injection after a compaction work as in t3code.",
+  "version": "1.1.0",
+  "description": "Plain Claude Code CLI host hooks: past 250k tokens of context, the agent saves its live-state file and ends its turn with a /compact line, which the hook types itself inside tmux when the input box is empty (else the user runs it); the summary rules and the state re-injection after a compaction work as in t3code.",
   "author": {
     "name": "Pluneto"
   },

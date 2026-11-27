@@ -17,8 +17,31 @@ OTHER_SID = "22222222-2222-2222-2222-222222222222"
 THREAD = "thread-abc"
 # GIT_* goes too: a git hook (the pre-commit run of scripts/validate) exports GIT_DIR and GIT_INDEX_FILE,
 # which would point every git call here at the repository being committed instead of the temp repos.
+# TMUX and TMUX_PANE go too, and every test finds a fake `tmux` first on PATH (HookCase), so no test can type
+# into the pane of the session that runs it.
 CLEAN_ENV = {k: v for k, v in os.environ.items()
-             if k not in ("COMPACT_NUDGE_TOKENS", "T3CODE_THREAD_ID", "CLAUDE_CODE_SESSION_ID") and not k.startswith("GIT_")}
+             if k not in ("COMPACT_NUDGE_TOKENS", "T3CODE_THREAD_ID", "CLAUDE_CODE_SESSION_ID", "TMUX", "TMUX_PANE")
+             and not k.startswith("GIT_")}
+PANE = "%7"
+# Records each call's argv in $FAKE_TMUX_LOG; display-message prints "$FAKE_PANE_PID $FAKE_PANE_IN_MODE" (mode 0 by
+# default), capture-pane prints $FAKE_CAPTURE.
+FAKE_TMUX = f"""#!{sys.executable}
+import json, os, sys
+args = sys.argv[1:]
+with open(os.environ["FAKE_TMUX_LOG"], "a") as log:
+    log.write(json.dumps(args) + "\\n")
+if os.environ.get("FAKE_TMUX_DOWN"):
+    sys.exit(1)
+if args[0] == "display-message":
+    print(os.environ.get("FAKE_PANE_PID", ""), os.environ.get("FAKE_PANE_IN_MODE", "0"))
+elif args[0] == "capture-pane":
+    sys.stdout.write(open(os.environ["FAKE_CAPTURE"], encoding="utf-8").read())
+"""
+# A parent process whose comm is `claude` (python run through a symlink of that name): it marks itself as the
+# pane's process when none is marked yet, then runs its argv with stdin passed through.
+CLAUDE_PARENT = """import os, subprocess, sys
+os.environ.setdefault("FAKE_PANE_PID", str(os.getpid()))
+sys.exit(subprocess.run(sys.argv[1:]).returncode)"""
 
 
 def git(cwd, *args):
@@ -63,9 +86,13 @@ def write_transcript(path, lines):
     return str(path)
 
 
-def run_hook(payload, *argv, env=None, raw_input=None):
+def run_hook(payload, *argv, env=None, raw_input=None, claude_parents=0):
+    """Run the hook, under `claude_parents` nested claude-named parents (0: straight from the test)."""
     full_env = dict(CLEAN_ENV, **(env or {}))
-    run = subprocess.run([sys.executable, str(SCRIPT), *argv],
+    command = [sys.executable, str(SCRIPT), *argv]
+    for _ in range(claude_parents):
+        command = [CLEAN_ENV["FAKE_CLAUDE"], "-c", CLAUDE_PARENT] + command
+    run = subprocess.run(command,
                          input=raw_input if raw_input is not None else json.dumps(payload),
                          capture_output=True, text=True, env=full_env)
     return run.returncode, run.stdout
@@ -81,7 +108,17 @@ class HookCase(unittest.TestCase):
         self.plan = write_plan(self.repo, ["- built M1", "- built M2"])
         self.home = Path(self.tmp.name) / "home"  # the CLI host's fallback folder lives under $HOME
         self.home.mkdir()
-        patcher = mock.patch.dict(CLEAN_ENV, {"HOME": str(self.home)})
+        bin_dir = Path(self.tmp.name) / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "tmux").write_text(FAKE_TMUX)
+        (bin_dir / "tmux").chmod(0o755)
+        (bin_dir / "claude").symlink_to(sys.executable)
+        self.tmux_log = Path(self.tmp.name) / "tmux.log"
+        self.capture = Path(self.tmp.name) / "capture.txt"
+        patcher = mock.patch.dict(CLEAN_ENV, {
+            "HOME": str(self.home), "PATH": f"{bin_dir}{os.pathsep}{CLEAN_ENV.get('PATH', '')}",
+            "FAKE_TMUX_LOG": str(self.tmux_log), "FAKE_CAPTURE": str(self.capture),
+            "FAKE_CLAUDE": str(bin_dir / "claude")})
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -133,6 +170,7 @@ class NoOpTests(HookCase):
 
 
 class PreCompactTests(HookCase):
+
     def test_prints_summary_instructions(self):
         path = write_state(self.repo, SID, "Milestone: M1\n", self.plan)
         for trigger in ("manual", "auto"):
@@ -446,6 +484,153 @@ class CliTests(HookCase):
         self.assertIn("Milestone: HOME", text)
         self.assertIn("- built M2", text)
         self.assertFalse(self.fallback.with_suffix(".nudged").exists())
+
+
+EMPTY_INPUT = ('\x1b[38;5;244m' + '─' * 40 + '\n'
+               '\x1b[39m❯ \x1b[2mTry "how do I log an error?"\x1b[0m\n'
+               '\x1b[38;5;244m' + '─' * 40 + '\n'
+               '\x1b[39m  \x1b[1m\x1b[38;5;246mHaiku 5.5\x1b[0m\n')  # captured from Claude Code 2.1.332
+FOCUS = "plan plans/plan-x.md, M2 tests, next: write the guard"
+RESUME_PROMPT = ("[auto-resume after compaction - not a new instruction from the user] "
+                 "Continue with the next action in the live-state file.")
+
+
+class AutoCompactTests(HookCase):
+    """`--host cli` inside tmux: on the turn's second Stop the hook types the agent's /compact line itself."""
+
+    def setUp(self):
+        super().setUp()
+        self.transcript = Path(self.tmp.name) / "t.jsonl"
+        write_transcript(self.transcript, [usage_line(300000)])
+        self.capture.write_text(EMPTY_INPUT, encoding="utf-8")
+        self.state = write_state(self.repo, SID, "Resume: yes\nMilestone: M2\n", self.plan)
+
+    def first_stop(self, **env):
+        payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=False)
+        code, out = run_hook(payload, "Stop", "--host", "cli", env=dict({"TMUX_PANE": PANE}, **env), claude_parents=1)
+        self.assertEqual(json.loads(out)["decision"], "block")
+
+    def second_stop(self, message=f"State saved.\n/compact {FOCUS}", claude_parents=1, host="cli", **env):
+        payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=True,
+                               last_assistant_message=message)
+        return run_hook(payload, "Stop", "--host", host, env=dict({"TMUX_PANE": PANE}, **env),
+                        claude_parents=claude_parents)
+
+    def sent(self):
+        calls = [json.loads(line) for line in self.tmux_log.read_text().splitlines()] if self.tmux_log.exists() else []
+        return [call for call in calls if call[0] == "send-keys"]
+
+    def run_cli_session_start(self):
+        return run_hook(self.payload("SessionStart", source="compact"), "SessionStart", "--host", "cli")
+
+    def assertNothingTyped(self, result=None):
+        if result is not None:
+            self.assertEqual(result, (0, ""))
+        self.assertEqual(self.sent(), [])
+
+    def test_nudge_asks_for_the_resume_line_and_says_the_hook_may_run_the_compact_line(self):
+        payload = self.payload("Stop", transcript_path=str(self.transcript), stop_hook_active=False)
+        decision = json.loads(run_hook(payload, "Stop", "--host", "cli")[1])
+        for needed in ("third line", "Resume: yes", "Resume: no", "runs it itself"):
+            self.assertIn(needed, decision["reason"])
+        self.assertNotIn("Only the user can start", decision["reason"])
+        self.assertIn("on its own", decision["systemMessage"])
+
+    def test_second_stop_types_the_compact_line_then_enter(self):
+        self.first_stop()
+        self.assertEqual(self.sent(), [])
+        self.assertEqual(self.second_stop(), (0, ""))
+        self.assertEqual(self.sent()[:2], [["send-keys", "-t", PANE, "-l", f"/compact {FOCUS}"],
+                                           ["send-keys", "-t", PANE, "Enter"]])
+
+    def test_resume_yes_types_the_labelled_prompt_after_the_compact_line(self):
+        self.first_stop()
+        self.second_stop()
+        self.assertEqual(self.sent(), [["send-keys", "-t", PANE, "-l", f"/compact {FOCUS}"],
+                                       ["send-keys", "-t", PANE, "Enter"],
+                                       ["send-keys", "-t", PANE, "-l", RESUME_PROMPT],
+                                       ["send-keys", "-t", PANE, "Enter"]])
+
+    def test_resume_missing_no_or_other_types_only_the_compact_line(self):
+        for body in ("Milestone: M2\n", "Resume: no\n", "Resume: maybe\n", "Resume: yes please\n",
+                     "Milestone: M2\nResume: yes\n"):  # only the third line counts
+            with self.subTest(body=body):
+                self.state.write_text(f"Updated: 2026-11-28T10:00:00Z\nPlan: {self.plan}\n{body}", encoding="utf-8")
+                self.run_cli_session_start()
+                self.tmux_log.unlink(missing_ok=True)
+                self.first_stop()
+                self.second_stop()
+                self.assertEqual([call[-1] for call in self.sent()], [f"/compact {FOCUS}", "Enter"])
+
+    def test_sends_once_per_cycle_and_again_after_a_compaction(self):
+        self.first_stop()
+        self.second_stop()
+        self.second_stop()
+        self.assertEqual(len(self.sent()), 4)
+        self.assertTrue(self.state.with_suffix(".queued").exists())
+        self.run_cli_session_start()
+        self.assertFalse(self.state.with_suffix(".queued").exists())
+        self.assertFalse(self.state.with_suffix(".nudged").exists())
+        self.first_stop()
+        self.second_stop()
+        self.assertEqual(len(self.sent()), 8)
+
+    def test_line_falls_back_to_the_newest_assistant_entry_of_the_transcript(self):
+        reply = json.dumps({"type": "assistant", "message": {"content": [
+            {"type": "text", "text": f"Saved.\n/compact {FOCUS}"}]}})
+        side = json.dumps({"type": "assistant", "isSidechain": True, "message": {"content": [
+            {"type": "text", "text": "/compact from a sub-agent"}]}})
+        write_transcript(self.transcript, [usage_line(300000), reply, side])
+        self.first_stop()
+        self.second_stop(message=None)
+        self.assertEqual(self.sent()[0][-1], f"/compact {FOCUS}")
+
+    def test_without_a_pane_or_with_tmux_down_nothing_is_typed(self):
+        self.first_stop()
+        self.assertNothingTyped(self.second_stop(TMUX_PANE=""))
+        self.assertNothingTyped(self.second_stop(FAKE_TMUX_DOWN="1"))
+
+    def test_outside_a_claude_process_or_under_a_nested_claude_nothing_is_typed(self):
+        self.first_stop()
+        self.assertNothingTyped(self.second_stop(claude_parents=0))
+        self.assertNothingTyped(self.second_stop(claude_parents=2))  # a nested claude would type into its parent's pane
+
+    def test_a_pane_in_copy_mode_gets_nothing(self):
+        self.first_stop()
+        self.assertNothingTyped(self.second_stop(FAKE_PANE_IN_MODE="1"))  # keys would go to copy mode, not claude
+
+    def test_a_pane_that_is_not_an_ancestor_gets_nothing(self):
+        self.first_stop()
+        self.assertNothingTyped(self.second_stop(FAKE_PANE_PID="999999999"))
+        self.assertNothingTyped(self.second_stop(FAKE_PANE_PID="junk"))
+
+    def test_a_draft_or_a_queued_user_message_gets_nothing(self):
+        border = '\x1b[38;5;244m' + '─' * 40 + '\n'
+        drafts = {
+            "draft": border + '\x1b[39m❯ hello draft\n' + border,
+            "blank first line": border + '\x1b[39m❯ \n  second line\n' + border,
+            "draft in colour 2": border + '\x1b[39m❯ \x1b[38;5;2m/model\x1b[39m\n' + border,
+            "draft after dim off": border + '\x1b[39m❯ \x1b[2mTry\x1b[22mtyped\n' + border,
+            "queued hint": border + '\x1b[39m❯ \x1b[2mPress up to edit queued messages\x1b[0m\n' + border,
+            "queued line": 'Queued · ctrl+x ctrl+s to send now\n' + border + '\x1b[39m❯ \n' + border,
+            "no input line": 'Compacting conversation…\n',
+        }
+        self.first_stop()
+        for name, capture in drafts.items():
+            with self.subTest(name):
+                self.capture.write_text(capture, encoding="utf-8")
+                self.assertNothingTyped(self.second_stop())
+
+    def test_a_bad_or_missing_line_gets_nothing(self):
+        self.first_stop()
+        for message in ("All done.", f"/compact {FOCUS}\nThanks!", "/compact ", "/compact \x1b[31mred",
+                        "/compact " + "x" * 301, "", None):
+            with self.subTest(message=message):
+                self.assertNothingTyped(self.second_stop(message=message))
+
+    def test_t3_host_never_types(self):
+        self.first_stop()
+        self.assertNothingTyped(self.second_stop(host="t3", T3CODE_THREAD_ID=THREAD))
 
 
 if __name__ == "__main__":
