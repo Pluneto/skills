@@ -105,7 +105,7 @@ considered `skill-tools:writing-for-agents`, skipped: it shapes the injected wor
 `engineering:pr` - Need: the PR must carry the three-compaction result as its proof; Provides: the Summary / Evidence / Merge Danger body with a before and after; Without it: a PR whose reviewer cannot see that the text returned after each compaction.
 considered `skill-tools:writing-for-agents`, skipped: the injected text is two fixed sentences, and its one rule (factual wording) is already a constraint of this plan.
 
-### Milestone 2: live on the box
+### Milestone 2: live on the box (done)
 
 **Outcome:** the plugin runs in every Claude Code thread on the box, and a real T3 thread proves it.
 
@@ -127,6 +127,8 @@ considered `skill-tools:writing-for-agents`, skipped: the injected text is two f
 
 - Build gate (before M1): pass - in a T3-style session `UserPromptSubmit` delivers the raw message (multi-line, and starting with a skill or unknown slash command); built-in `/compact` and `/help` never reach it; `SessionStart` fires with source `compact` after `/compact`.
 - M1 the `pin` plugin, built and proven (orchestrator, with sonnet sub-agents for the trial and the review): check pass - 30 unit tests and `scripts/validate` green; three-compaction run byte-exact at 3 boundaries (manual, manual, auto), combined run with `t3code` complete (6,240 + 6,259 units, sum 12,499); PR #33 open, not merged; deviations: `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` works, `autoCompactWindow` or its env twin below 100,000 does not, so the trial sets window 100,000 plus a 20% override with no MCP servers; the trial also loads `workflow` because `t3code` depends on it; pin files are written and read as bytes so CRLF survives; owed: milestone 2 (merge, config-owner prompt, real-thread check)
+- M1 follow-up: PR #33 merged on the user's "merge if CI is green" (validate `success` on the PR's last commit), squash commit 82fd443.
+- M2 live on the box (orchestrator): check pass - after the config owner installed `pin@pluneto-skills` 1.0.0 at user scope, `claude plugin list` showed it enabled under both config folders; a new thread in the sandbox project (Haiku 5.5, plugin not enabled by the thread) confirmed the `#pin` in one line, its transcript shows the pinned text injected after each of two compactions and the replies still ended with the probe token, and after `#unpin` the third compaction injected nothing and the pin file was gone; deviations: none; owed: none
 
 ## Risks and assumptions
 
