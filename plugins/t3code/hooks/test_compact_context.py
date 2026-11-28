@@ -621,6 +621,14 @@ class AutoCompactTests(HookCase):
                 self.capture.write_text(capture, encoding="utf-8")
                 self.assertNothingTyped(self.second_stop())
 
+    def test_queued_words_quoted_in_the_transcript_still_type(self):
+        border = '\x1b[38;5;244m' + '─' * 40 + '\n'
+        self.first_stop()
+        self.capture.write_text('Hint: "Press up to edit queued messages", status "Queued · ctrl+x ctrl+s".\n'
+                                + border + '\x1b[39m❯ \x1b[2mTry "fix lint"\x1b[0m\n' + border, encoding="utf-8")
+        self.assertEqual(self.second_stop(), (0, ""))
+        self.assertEqual(self.sent()[0], ["send-keys", "-t", PANE, "-l", f"/compact {FOCUS}"])
+
     def test_a_bad_or_missing_line_gets_nothing(self):
         self.first_stop()
         for message in ("All done.", f"/compact {FOCUS}\nThanks!", "/compact ", "/compact \x1b[31mred",

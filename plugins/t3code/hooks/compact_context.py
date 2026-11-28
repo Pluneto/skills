@@ -301,19 +301,25 @@ def own_pane(pane):
 
 def input_empty(pane):
     """True when the pane shows Claude Code's input box with no draft in it and no queued user message: every line
-    from the last `❯` down to the box's bottom border holds only whitespace or dim text (the placeholder)."""
+    from the last `❯` down to the box's bottom border holds only whitespace or dim text (the placeholder). A queued
+    message shows as a line starting `Queued ·` above the box or as the box placeholder `Press up to edit queued
+    messages`; the same words elsewhere (the transcript quoting them) don't count."""
     screen = tmux("capture-pane", "-p", "-e", "-t", pane).splitlines()
     plain = [ANSI.sub("", line) for line in screen]
-    if any("Queued \u00b7" in line or "queued messages" in line for line in plain):
-        return False
     starts = [i for i, line in enumerate(plain) if "\u276f" in line]
     if not starts:
         return False
-    box = [screen[starts[-1]].split("\u276f", 1)[1]]
-    for raw, line in zip(screen[starts[-1] + 1:], plain[starts[-1] + 1:]):
+    start = starts[-1]
+    if any(line.lstrip().startswith("Queued \u00b7") for line in plain[:start]):
+        return False
+    box, box_plain = [screen[start].split("\u276f", 1)[1]], [plain[start]]
+    for raw, line in zip(screen[start + 1:], plain[start + 1:]):
         if line.lstrip().startswith("\u2500"):
             break
         box.append(raw)
+        box_plain.append(line)
+    if any("queued messages" in line for line in box_plain):
+        return False
     return not any(undimmed_text(line) for line in box)
 
 
